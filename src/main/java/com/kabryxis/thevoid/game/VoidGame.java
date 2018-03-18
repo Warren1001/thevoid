@@ -142,14 +142,14 @@ public class VoidGame implements Game {
 		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
+		round.end(this, arena);
+		arena.endOfRound();
+		calculateRoundWinners();
 		forEachGamer(gamer -> {
 			gamer.setRoundPoints(0);
 			gamer.clearEffects();
 			gamer.clearInventory();
 		});
-		round.end(this, arena);
-		arena.endOfRound();
-		calculateRoundWinners();
 		Threads.sleep(3500);
 		board.nextRound();
 		BukkitThreads.syncLater(() -> info.getArena().eraseSchematic(), 5);
