@@ -44,7 +44,7 @@ public class Hourglass extends AbstractRound {
 	
 	@Override
 	public void load(Game game, Arena arena) {
-		loadHourglassData(arena.getCurrentArenaData().getSchematic().getName());
+		loadHourglassData(arena.getCurrentSchematicData().getSchematic().getName());
 	}
 	
 	private void loadHourglassData(String name) {

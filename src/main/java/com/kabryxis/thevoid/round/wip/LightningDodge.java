@@ -1,9 +1,11 @@
 package com.kabryxis.thevoid.round.wip;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.kabryxis.kabutils.random.Randoms;
+import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.AbstractRound;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -16,12 +18,9 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import com.kabryxis.kabutils.random.Randoms;
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class LightningDodge extends AbstractRound {
 	

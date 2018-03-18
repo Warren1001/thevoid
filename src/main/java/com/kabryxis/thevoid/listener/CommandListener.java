@@ -1,11 +1,11 @@
 package com.kabryxis.thevoid.listener;
 
 import com.kabryxis.kabutils.command.Com;
-import com.kabryxis.kabutils.command.Command;
 import com.kabryxis.kabutils.spigot.command.BukkitCommandIssuer;
 import com.kabryxis.kabutils.spigot.world.WorldManager;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.schematic.BaseSchematic;
 import com.kabryxis.thevoid.api.schematic.Schematic;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -21,8 +21,7 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"start"})
-	public boolean onStart(Command command) {
-		String[] args = command.getArgs();
+	public boolean onStart(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(args.length == 1) {
 			plugin.start(Integer.parseInt(args[0]));
 			return true;
@@ -31,10 +30,8 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"buildmode"})
-	public boolean onBuildMode(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onBuildMode(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		String[] args = command.getArgs();
 		if(args.length == 0) {
 			Player player = issuer.getPlayer();
 			player.setGameMode(player.getGameMode() == GameMode.CREATIVE ? GameMode.SURVIVAL : GameMode.CREATIVE);
@@ -46,22 +43,22 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"sch"})
-	public boolean onSch(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onSch(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		String[] args = command.getArgs();
-		if(args.length == 5) {
-			new Schematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]), Integer.parseInt(args[1]));
+		if(args.length == 2) {
+			new Schematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Boolean.parseBoolean(args[1]));
+		}
+		else if(args.length == 5) {
+			new BaseSchematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]), Integer.parseInt(args[1]));
 			return true;
 		}
 		return false;
 	}
 	
 	@Com(aliases = {"erase"})
-	public boolean onErase(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onErase(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		if(command.getArgs().length == 0) {
+		if(args.length == 0) {
 			Chunk chunk = issuer.getPlayer().getLocation().getChunk();
 			WorldManager.getWorld(chunk.getWorld()).eraseChunk(chunk.getX(), chunk.getZ());
 			return true;
@@ -70,10 +67,9 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"refresh"})
-	public boolean onRefresh(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onRefresh(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		if(command.getArgs().length == 0) {
+		if(args.length == 0) {
 			Chunk chunk = issuer.getPlayer().getLocation().getChunk();
 			WorldManager.getWorld(chunk.getWorld()).refreshChunk(chunk.getX(), chunk.getZ());
 			return true;
@@ -82,10 +78,8 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"tpw"})
-	public boolean onTpw(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onTpw(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		String[] args = command.getArgs();
 		if(args.length == 4) {
 			String worldName = args[0];
 			int x = Integer.parseInt(args[1]);
@@ -100,11 +94,9 @@ public class CommandListener {
 	private BukkitTask task;
 	
 	@Com(aliases = {"timertest"})
-	public boolean onTimerTest(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onTimerTest(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		Player player = issuer.getPlayer();
-		String[] args = command.getArgs();
 		if(args.length == 1) {
 			if(args[0].equalsIgnoreCase("stop")) {
 				if(task != null) task.cancel();
@@ -135,11 +127,9 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"particletest"})
-	public boolean onParticleTest(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onParticleTest(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		Player player = issuer.getPlayer();
-		String[] args = command.getArgs();
 		if(args.length == 0) {
 			Location loc = new Location(player.getWorld(), 0, 100, 0);
 			new BukkitRunnable() {
@@ -180,10 +170,8 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"game"})
-	public boolean onGame(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onGame(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		String[] args = command.getArgs();
 		if(args.length > 0) {
 			if(args.length == 1) {
 				if(args[0].equalsIgnoreCase("pause")) {
@@ -206,12 +194,11 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"tpcenter"})
-	public boolean onTpCenter(Command command) {
-		BukkitCommandIssuer issuer = (BukkitCommandIssuer)command.getIssuer();
+	public boolean onTpCenter(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		if(command.getArgs().length == 0) {
+		if(args.length == 0) {
 			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
-			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter());
+			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentSchematicData().getCenter());
 		}
 		return false;
 	}

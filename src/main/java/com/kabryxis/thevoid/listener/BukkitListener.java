@@ -1,8 +1,11 @@
 package com.kabryxis.thevoid.listener;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.kabryxis.kabutils.spigot.event.GlobalListener;
+import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
+import com.kabryxis.kabutils.spigot.world.WorldManager;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.RoundInfo;
+import com.kabryxis.thevoid.game.VoidGame;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -15,22 +18,15 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
-import com.kabryxis.kabutils.spigot.event.GlobalListener;
-import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
-import com.kabryxis.kabutils.spigot.world.WorldManager;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.RoundInfo;
-import com.kabryxis.thevoid.game.VoidGame;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BukkitListener implements GlobalListener {
 	
@@ -68,7 +64,7 @@ public class BukkitListener implements GlobalListener {
 				if(pmeGamer.isInGame() && pmeGamer.getGame().isInProgress()) {
 					Location from = pme.getFrom(), to = pme.getTo();
 					RoundInfo info = game.getCurrentRoundInfo();
-					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentArenaData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmeGamer, 0L) > 1000) {
+					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentSchematicData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmeGamer, 0L) > 1000) {
 						pmeTimestamps.put(pmeGamer, System.currentTimeMillis());
 						info.getRound().fell(game, pmeGamer);
 					}
@@ -88,9 +84,13 @@ public class BukkitListener implements GlobalListener {
 			if(cse.getSpawnReason() != SpawnReason.CUSTOM/* && !(((CraftEntity)cse.getEntity()).getHandle() instanceof PetDragon)*/) cse.setCancelled(true);
 			break;
 		case "ItemSpawnEvent":
-			//case "EntitySpawnEvent":
+		case "EntitySpawnEvent":
 			EntitySpawnEvent ese = (EntitySpawnEvent)event;
 			if(!(ese.getEntity() instanceof Player)) ese.setCancelled(true);
+			break;
+		case "EntityDeathEvent": // might need a more permanent solution
+			EntityDeathEvent ede2 = (EntityDeathEvent)event;
+			ede2.setDroppedExp(0);
 			break;
 		//case "PlayerInteractEntityEvent":
 		case "PlayerInteractEvent":
@@ -112,8 +112,9 @@ public class BukkitListener implements GlobalListener {
 						pieGamer.getSelection().addBlock(pie.getClickedBlock());
 						pie.setCancelled(true);
 					}
-					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK) {
-						pieGamer.getSelection().addSelection(false);
+					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK || pie.getAction() == Action.RIGHT_CLICK_AIR) {
+						if(pieGamer.getPlayer().isSneaking()) pieGamer.getSelection().addSelection(false);
+						else pieGamer.getSelection().addSelection(true);
 						pie.setCancelled(true);
 					}
 				}
@@ -122,7 +123,7 @@ public class BukkitListener implements GlobalListener {
 						pieGamer.getSelection().removeBlock(pie.getClickedBlock());
 						pie.setCancelled(true);
 					}
-					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK) {
+					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK || pie.getAction() == Action.RIGHT_CLICK_AIR) {
 						pieGamer.getSelection().removeSelection();
 						pie.setCancelled(true);
 					}
@@ -136,9 +137,6 @@ public class BukkitListener implements GlobalListener {
 			Entity entity = ede.getEntity();
 			if(entity instanceof Player) {
 				Gamer edeGamer = Gamer.getGamer((Player)entity);
-				/*if(ede.getCause() == DamageCause.VOID) {
-					if(!edeGamer.isInGame() && !edeGamer.isInBuilderMode()) game.spawn(edeGamer);
-				}*/
 				if(edeGamer.isInBuilderMode()) break;
 			}
 			ede.setCancelled(true);

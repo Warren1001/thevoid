@@ -1,8 +1,7 @@
 package com.kabryxis.thevoid.game;
 
 import com.kabryxis.kabutils.concurrent.Threads;
-import com.kabryxis.kabutils.random.MultiRandomArrayList;
-import com.kabryxis.kabutils.random.RandomArrayList;
+import com.kabryxis.kabutils.data.DataQueue;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.version.wrapper.WrapperCache;
 import com.kabryxis.kabutils.spigot.version.wrapper.packet.out.chat.WrappedPacketPlayOutChat;
@@ -17,14 +16,16 @@ import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.AbstractRound;
 import com.kabryxis.thevoid.api.round.Round;
 import com.kabryxis.thevoid.api.round.RoundInfo;
-import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,22 +35,21 @@ public class VoidGame implements Game {
 	private final String name = "thevoid-game";
 	private final Logger logger = Logger.getLogger(name);
 	private final List<Gamer> gamers = new ArrayList<>();
-	private final List<RoundInfo> infos = new ArrayList<>();
-	private final MultiRandomArrayList<String, Arena> arenas = new MultiRandomArrayList<>(() -> new HashMap<>(), Arena::getWorldName, 2);
-	private final MultiRandomArrayList<String, Schematic> schematics = new MultiRandomArrayList<>(() -> new HashMap<>(), Schematic::getName, 2);
-	private final RandomArrayList<Round> rounds = new RandomArrayList<>(2);
-	private final ArenaDataObjectRegistry objectRegistry = new ArenaDataObjectRegistry();
+	private final DataQueue<RoundInfo> infos = new DataQueue<>();
 	private final WrappedPacketPlayOutChat<?> actionMessage = WrapperCache.get(WrappedPacketPlayOutChat.class);
 	private final Board board = new Board(this);
 	private final CountdownManager cm = new CountdownManager();
 	
 	private final TheVoid plugin;
+	private final RoundInfoRegistry infoRegistry;
+	private final ArenaDataObjectRegistry objectRegistry;
 	
 	private Location spawn;
-	private int index = -1;
 	
-	public VoidGame(TheVoid plugin) {
+	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, ArenaDataObjectRegistry objectRegistry) {
 		this.plugin = plugin;
+		this.infoRegistry = infoRegistry;
+		this.objectRegistry = objectRegistry;
 		cm.constructNewCountdown("preGame", 1000, false, time -> broadcastMessage("Starting in " + time + " seconds."));
 		cm.constructNewCountdown("gameTimer", 1000, true, time -> {
 			actionMessage.newInstance(ChatColor.GOLD.toString() + time);
@@ -67,10 +67,6 @@ public class VoidGame implements Game {
 		});
 	}
 	
-	public ArenaDataObjectRegistry getRegistry() {
-		return objectRegistry;
-	}
-	
 	@Override
 	public String getName() {
 		return name;
@@ -86,15 +82,9 @@ public class VoidGame implements Game {
 		return logger;
 	}
 	
-	public void setSpawn(Location loc) {
-		if(spawn != null) WorldManager.removeChunkFromMemory(name, spawn.getChunk());
-		spawn = loc;
-		WorldManager.keepChunkInMemory(name, spawn.getChunk());
-	}
-	
 	@Override
 	public void threadStart() {
-		getNextRoundInfo().load(this);
+		infos.getNext().load(this);
 		forEachGamer(g -> {
 			g.setScoreboard(board.getScoreboard());
 			g.setGame(this);
@@ -105,23 +95,24 @@ public class VoidGame implements Game {
 	
 	@Override
 	public boolean canRun() {
-		return hasNextRoundInfo();
+		return infos.hasNext();
 	}
 	
 	@Override
 	public void next() {
-		index++;
+		infos.nextIndex();
 		Collections.shuffle(gamers);
 	}
 	
 	@Override
 	public void start() {
-		RoundInfo info = infos.get(index);
+		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
-		Location[] spawns = Teleport.getEquidistantPoints(arena.getCurrentArenaData().getCenter(), gamers.size(), arena.getCurrentArenaData().getSchematic().getRadius());
+		Location[] spawns = Teleport.getEquidistantPoints(arena.getCurrentSchematicData().getCenter(), gamers.size(), arena.getCurrentSchematicData().getSchematic().getRadius());
 		for(int i = 0; i < spawns.length; i++) {
 			Gamer gamer = gamers.get(i);
+			gamer.setRoundPoints(0, true);
 			Location spawn = spawns[i];
 			if(gamer.isAlive()) gamer.teleport(spawn);
 			else gamer.revive(spawn);
@@ -134,12 +125,12 @@ public class VoidGame implements Game {
 			});
 		}
 		round.start(this, arena);
-		if(hasNextRoundInfo()) getNextRoundInfo().load(this);
+		if(infos.hasNext()) infos.getNext().load(this);
 	}
 	
 	@Override
 	public void timer() {
-		RoundInfo info = infos.get(index);
+		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		int roundLength = round.getRoundLength();
 		if(roundLength == -1) round.customTimer();
@@ -148,16 +139,100 @@ public class VoidGame implements Game {
 	
 	@Override
 	public void end() {
-		RoundInfo info = infos.get(index);
+		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
-		forEachGamer(Gamer::clearInventory);
+		forEachGamer(gamer -> {
+			gamer.setRoundPoints(0);
+			gamer.clearEffects();
+			gamer.clearInventory();
+		});
 		round.end(this, arena);
 		arena.endOfRound();
 		calculateRoundWinners();
 		Threads.sleep(3500);
 		board.nextRound();
 		BukkitThreads.syncLater(() -> info.getArena().eraseSchematic(), 5);
+	}
+	
+	@Override
+	public void threadEnd() {
+		infos.resetIndex();
+		infos.clear();
+		broadcastMessage(getGameWinner().getName() + " wins!");
+		board.reset(); // Must be after game winner announcer method.
+		forEachGamer(gamer -> {
+			gamer.reset();
+			gamer.setGame(null);
+			gamer.teleport(spawn);
+		});
+	}
+	
+	@Override
+	public void pause() {
+		cm.pauseAll();
+	}
+	
+	@Override
+	public void unpause() {
+		cm.unpauseAll();
+	}
+	
+	@Override
+	public RoundInfo getCurrentRoundInfo() {
+		return infos.getCurrent();
+	}
+	
+	@Override
+	public void forEachGamer(Consumer<? super Gamer> action) {
+		gamers.forEach(action);
+	}
+	
+	@Override
+	public void callEvent(Event event) {
+		if(isInProgress()) getCurrentRoundInfo().getRound().event(this, event);
+	}
+	
+	@Override
+	public boolean isInProgress() {
+		return infos.getCurrentIndex() != -1;
+	}
+	
+	@Override
+	public void addGamer(Gamer gamer) {
+		gamers.add(gamer);
+		if(!isInProgress()) gamer.teleport(spawn);
+		else {
+			if(gamer.getGamePoints() == 0) gamer.setGamePoints(0);
+			gamer.kill(getCurrentRoundInfo().getArena().getCenter().clone().add(0, 20, 0));
+		}
+	}
+	
+	@Override
+	public void removeGamer(Gamer gamer) {
+		gamers.remove(gamer);
+	}
+	
+	public ArenaDataObjectRegistry getRegistry() {
+		return objectRegistry;
+	}
+	
+	public CountdownManager getCountdownManager() {
+		return cm;
+	}
+	
+	public void setSpawn(Location loc) {
+		if(spawn != null) WorldManager.removeChunkFromMemory(name, spawn.getChunk());
+		spawn = loc;
+		WorldManager.keepChunkInMemory(name, spawn.getChunk());
+	}
+	
+	public void addRounds(int amount) {
+		infoRegistry.queueArenaData(infos, amount);
+	}
+	
+	public void broadcastMessage(String message) {
+		forEachGamer(g -> g.message(message));
 	}
 	
 	private void calculateRoundWinners() {
@@ -189,7 +264,6 @@ public class VoidGame implements Game {
 		return winner;
 	}
 	
-	@SuppressWarnings("unused")
 	private List<Gamer> getGameWinners() {
 		int topPoints = 0;
 		for(Gamer gamer : gamers) {
@@ -198,138 +272,6 @@ public class VoidGame implements Game {
 		}
 		int finalTopPoints = topPoints;
 		return gamers.stream().filter(g -> g.getGamePoints() == finalTopPoints).collect(Collectors.toCollection(ArrayList::new));
-	}
-	
-	@Override
-	public void threadEnd() {
-		index = -1;
-		infos.clear();
-		broadcastMessage(getGameWinner().getName() + " wins!");
-		board.reset(); // Must be after game winner announcer method.
-		forEachGamer(gamer -> {
-			gamer.reset();
-			gamer.setGame(null);
-			gamer.teleport(spawn);
-		});
-	}
-	
-	@Override
-	public void pause() {
-		cm.pauseAll();
-	}
-	
-	@Override
-	public void unpause() {
-		cm.unpauseAll();
-	}
-	
-	public CountdownManager getCountdownManager() {
-		return cm;
-	}
-	
-	@Override
-	public RoundInfo getCurrentRoundInfo() {
-		return infos.get(index);
-	}
-	
-	public Arena getCurrentArena() {
-		return getCurrentRoundInfo().getArena();
-	}
-	
-	public Round getCurrentRound() {
-		return getCurrentRoundInfo().getRound();
-	}
-	
-	public RoundInfo getNextRoundInfo() {
-		return infos.get(index + 1);
-	}
-	
-	public boolean hasNextRoundInfo() {
-		return index != infos.size() - 1;
-	}
-	
-	@Override
-	public void forEachGamer(Consumer<? super Gamer> action) {
-		gamers.forEach(action);
-	}
-	
-	public void broadcastMessage(String message) {
-		forEachGamer(g -> g.message(message));
-	}
-	
-	public void registerArena(Arena arena) {
-		arenas.addToList(arena.getWorldName(), arena);
-	}
-	
-	public void registerArenas(Arena... arenas) {
-		for(Arena arena : arenas) {
-			registerArena(arena);
-		}
-	}
-	
-	public void registerRound(Round round) {
-		rounds.add(round);
-	}
-	
-	public void registerRounds(Round... rounds) {
-		for(Round round : rounds) {
-			registerRound(round);
-		}
-	}
-	
-	public void registerSchematic(Schematic schematic) {
-		schematics.addToList(schematic.getName(), schematic);
-	}
-	
-	public void registerSchematics(Schematic... schematics) {
-		for(Schematic schematic : schematics) {
-			registerSchematic(schematic);
-		}
-	}
-	
-	public void addRounds(int amount) {
-		Map<Arena, List<Schematic>> schematics = new HashMap<>();
-		for(; amount > 0; amount--) {
-			Round round = rounds.random();
-			Arena arena = generateArenaForRound(round);
-			Schematic schematic = generateSchematicForRound(round);
-			schematics.computeIfAbsent(arena, a -> new ArrayList<>()).add(schematic);
-			infos.add(new VoidRoundInfo(round, arena, schematic));
-		}
-		schematics.forEach(Arena::queueSchematics);
-	}
-	
-	public Arena generateArenaForRound(Round round) {
-		return arenas.random(round.getWorldNames());
-	}
-	
-	public Schematic generateSchematicForRound(Round round) {
-		return schematics.random(round.getSchematics());
-	}
-	
-	@Override
-	public void callEvent(Event event) {
-		if(isInProgress()) getCurrentRoundInfo().getRound().event(this, event);
-	}
-	
-	@Override
-	public boolean isInProgress() {
-		return index != -1;
-	}
-	
-	@Override
-	public void addGamer(Gamer gamer) {
-		gamers.add(gamer);
-		if(!isInProgress()) gamer.teleport(spawn);
-		else {
-			if(gamer.getGamePoints() == 0) gamer.setGamePoints(0);
-			gamer.kill(getCurrentRoundInfo().getArena().getCenter().clone().add(0, 20, 0));
-		}
-	}
-	
-	@Override
-	public void removeGamer(Gamer gamer) {
-		gamers.remove(gamer);
 	}
 	
 }

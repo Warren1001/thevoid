@@ -5,15 +5,15 @@ import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.round.Round;
 import com.kabryxis.thevoid.api.round.RoundInfo;
-import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.kabryxis.thevoid.api.schematic.BaseSchematic;
 
 public class VoidRoundInfo implements RoundInfo {
 	
 	private Round round;
 	private Arena arena;
-	private Schematic schematic;
+	private BaseSchematic schematic;
 	
-	public VoidRoundInfo(Round round, Arena arena, Schematic schematic) {
+	public VoidRoundInfo(Round round, Arena arena, BaseSchematic schematic) {
 		setRound(round);
 		setArena(arena);
 		setSchematic(schematic);
@@ -27,7 +27,7 @@ public class VoidRoundInfo implements RoundInfo {
 		this.arena = arena;
 	}
 	
-	public void setSchematic(Schematic schematic) {
+	public void setSchematic(BaseSchematic schematic) {
 		this.schematic = schematic;
 	}
 	
@@ -42,7 +42,7 @@ public class VoidRoundInfo implements RoundInfo {
 	}
 	
 	@Override
-	public Schematic getSchematic() {
+	public BaseSchematic getSchematic() {
 		return schematic;
 	}
 	
