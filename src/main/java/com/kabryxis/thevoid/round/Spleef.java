@@ -1,18 +1,17 @@
 package com.kabryxis.thevoid.round;
 
+import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.Material;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
-
-public class Spleef extends AbstractRound {
+public class Spleef extends VoidRound {
 	
 	public Spleef() {
 		super("spleef", 1);
@@ -50,5 +49,8 @@ public class Spleef extends AbstractRound {
 	
 	@Override
 	public void end(Game game, Arena arena) {}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

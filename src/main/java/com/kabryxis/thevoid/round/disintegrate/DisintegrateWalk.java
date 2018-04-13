@@ -1,5 +1,11 @@
 package com.kabryxis.thevoid.round.disintegrate;
 
+import com.kabryxis.kabutils.concurrent.Threads;
+import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -8,15 +14,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
-import com.kabryxis.kabutils.concurrent.Threads;
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
-
-public class DisintegrateWalk extends AbstractRound {
+public class DisintegrateWalk extends VoidRound {
 	
 	private static final String id = "disintegrateWalk";
 	
@@ -68,9 +66,7 @@ public class DisintegrateWalk extends AbstractRound {
 		}
 		else if(eve instanceof EntityChangeBlockEvent) {
 			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) {
-				BukkitThreads.syncLater(() -> event.getEntity().remove(), 10L);
-			}
+			if(event.getEntityType() == EntityType.FALLING_BLOCK) thread.queueSand(event.getEntity());
 		}
 	}
 	
@@ -96,5 +92,8 @@ public class DisintegrateWalk extends AbstractRound {
 	
 	@Override
 	public void load(Game game, Arena arena) {}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

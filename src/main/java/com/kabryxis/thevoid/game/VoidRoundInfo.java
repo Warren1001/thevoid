@@ -1,6 +1,5 @@
 package com.kabryxis.thevoid.game;
 
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.round.Round;
@@ -49,13 +48,9 @@ public class VoidRoundInfo implements RoundInfo {
 	@Override
 	public void load(Game game) {
 		arena.nextSchematic();
-		BukkitThreads.syncLater(() -> {
-			arena.loadChunks();
-			BukkitThreads.syncLater(() -> {
-				arena.loadSchematic();
-				round.load(game, arena);
-			}, 20 * 2);
-		}, 20 * 1);
+		arena.loadChunks();
+		arena.loadSchematic();
+		round.load(game, arena);
 	}
 	
 }

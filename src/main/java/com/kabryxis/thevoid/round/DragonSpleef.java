@@ -1,17 +1,15 @@
 package com.kabryxis.thevoid.round;
 
-import java.util.Collections;
-
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.event.Event;
-
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import com.kabryxis.thevoid.api.round.VoidRound;
+import org.bukkit.event.Event;
 
-public class DragonSpleef extends AbstractRound {
+import java.util.Collections;
+
+public class DragonSpleef extends VoidRound {
 	
 	private final int[] coords = { -50, 0, 50 };
 	
@@ -31,7 +29,7 @@ public class DragonSpleef extends AbstractRound {
 		BukkitThreads.syncLater(() -> {
 			for(int x : coords) {
 				for(int z : coords) {
-					if(x != 0 && z != 0) arena.spawnEntity(x, 1.75, z, EnderDragon.class);
+					//if(x != 0 && z != 0) arena.spawnEntity(x, 1.75, z, EnderDragon.class);
 				}
 			}
 		}, 30L);
@@ -53,5 +51,8 @@ public class DragonSpleef extends AbstractRound {
 	
 	@Override
 	public void end(Game game, Arena arena) {}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

@@ -1,9 +1,15 @@
 package com.kabryxis.thevoid.round.wip;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
+import com.kabryxis.kabutils.cache.Cache;
+import com.kabryxis.kabutils.random.Randoms;
+import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
+import com.kabryxis.kabutils.spigot.concurrent.DelayedActionThread;
+import com.kabryxis.kabutils.spigot.entity.DelayedEntityRemover;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -19,18 +25,16 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
-import com.kabryxis.kabutils.random.Randoms;
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
-public class Anvilstorm extends AbstractRound { // TODO needs a bit of visual/audio tweaking
+public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio tweaking
 	
 	private final Random rand = new Random();
 	private final ItemStack air = new ItemStack(Material.AIR);
 	private final Vector velocity = new Vector(0, -1.25, 0);
+	private final DelayedActionThread sandRemover = new DelayedActionThread("Sand remover - Anvilstorm");
 	
 	private List<Location> locs = null;
 	private BukkitTask task = null;
@@ -44,14 +48,16 @@ public class Anvilstorm extends AbstractRound { // TODO needs a bit of visual/au
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		locs = arena.getWalkableLocations();
+		if(!sandRemover.isRunning()) sandRemover.start();
+		else sandRemover.unpause();
+		locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		task = BukkitThreads.syncTimer(new BukkitRunnable() {
 			
 			@SuppressWarnings("deprecation")
 			@Override
 			public void run() {
 				for(int i = 0; i < 3 && !locs.isEmpty(); i++) {
-					FallingBlock fb = arena.getWorld().getWorld().spawnFallingBlock(Randoms.getRandomAndRemove(locs).clone().add(0, 40 + rand.nextInt(10) - 5, 0), Material.ANVIL, (byte)0);
+					FallingBlock fb = arena.getWorld().spawnFallingBlock(Randoms.getRandomAndRemove(locs).clone().add(0, 40 + rand.nextInt(10) - 5, 0), Material.ANVIL, (byte)0);
 					fb.setVelocity(velocity);
 					arena.spawnedCustomEntity(fb);
 				}
@@ -66,19 +72,18 @@ public class Anvilstorm extends AbstractRound { // TODO needs a bit of visual/au
 		task.cancel();
 		task = null;
 		locs = null;
+		sandRemover.pause();
 	}
 	
 	@Override
 	public void event(Game game, Event eve) {
 		if(eve instanceof EntityChangeBlockEvent) {
 			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) {
-				event.getBlock().getRelative(BlockFace.DOWN).breakNaturally(air);
-			}
+			if(event.getEntityType() == EntityType.FALLING_BLOCK) event.getBlock().getRelative(BlockFace.DOWN).breakNaturally(air);
 			else if(event.getBlock().getType() == Material.ANVIL) {
-				BukkitThreads.syncLater(() -> { // TODO optimize with singular thread
-					event.getEntity().remove();
-				}, 30L);
+				DelayedEntityRemover remover = Cache.get(DelayedEntityRemover.class);
+				remover.reuse(event.getEntity(), System.currentTimeMillis() + 500L);
+				sandRemover.add(remover);
 			}
 		}
 		else if(eve instanceof EntityDamageEvent) { // TODO might not work
@@ -106,5 +111,8 @@ public class Anvilstorm extends AbstractRound { // TODO needs a bit of visual/au
 		config.set("world-names", Collections.singletonList("world"));
 		config.set("schematics", Collections.singletonList("rainbow"));
 	}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

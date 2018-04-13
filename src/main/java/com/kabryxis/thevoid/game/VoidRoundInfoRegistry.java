@@ -2,6 +2,8 @@ package com.kabryxis.thevoid.game;
 
 import com.kabryxis.kabutils.random.MultiRandomArrayList;
 import com.kabryxis.kabutils.random.RandomArrayList;
+import com.kabryxis.kabutils.random.WeightedMultiRandomArrayList;
+import com.kabryxis.kabutils.random.WeightedRandomArrayList;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.round.Round;
 import com.kabryxis.thevoid.api.round.RoundInfo;
@@ -16,9 +18,9 @@ import java.util.Map;
 
 public class VoidRoundInfoRegistry implements RoundInfoRegistry {
 	
-	private final MultiRandomArrayList<String, Arena> arenas = new MultiRandomArrayList<>(() -> new HashMap<>(), Arena::getWorldName, 2);
-	private final MultiRandomArrayList<String, BaseSchematic> schematics = new MultiRandomArrayList<>(() -> new HashMap<>(), Schematic::getName, 2);
-	private final RandomArrayList<Round> rounds = new RandomArrayList<>(2);
+	private final MultiRandomArrayList<String, Arena> arenas = new WeightedMultiRandomArrayList<>(() -> new HashMap<>(), Arena::getWorldName, 2);
+	private final MultiRandomArrayList<String, BaseSchematic> schematics = new WeightedMultiRandomArrayList<>(() -> new HashMap<>(), Schematic::getName, 2);
+	private final RandomArrayList<Round> rounds = new WeightedRandomArrayList<>(2);
 	
 	@Override
 	public void registerArena(Arena arena) {

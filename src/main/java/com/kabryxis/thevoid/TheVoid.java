@@ -16,7 +16,7 @@ import com.kabryxis.thevoid.game.VoidGame;
 import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
 import com.kabryxis.thevoid.listener.BukkitListener;
 import com.kabryxis.thevoid.listener.CommandListener;
-import com.kabryxis.thevoid.round.wip.HangingSheep;
+import com.kabryxis.thevoid.round.wip.KnockbackDisintegrateHybrid;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,8 +42,10 @@ public class TheVoid extends JavaPlugin {
 		commandManager.registerListener(new CommandListener(this));
 		//framework.registerCommands(new UtilityListener(this));
 		ArenaDataObjectRegistry objectRegistry = new ArenaDataObjectRegistry();
+		objectRegistry.registerDataObjectCreator("walkable", ArenaWalkable.class);
 		RoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry();
-		infoRegistry.registerRounds(new HangingSheep()/*new LightningDodge()/*, new DisintegrateRandom(), new Anvilstorm(), new DisintegrateWalk(), new Spleef(), new Knockback()/*, new DragonSpleef(), new PetDragons()*/);
+		infoRegistry.registerRounds(new KnockbackDisintegrateHybrid()/*, new HangingSheep(), new LightningDodge(), new DisintegrateRandom(), new Anvilstorm(), new DisintegrateWalk(), new Spleef()/*, new
+		Knockback()*/);
 		for(File file : new File(Arena.PATH).listFiles(new FileEndingFilter(".yml"))) {
 			Config.get(file).load(config -> infoRegistry.registerArena(new Arena(objectRegistry, config)));
 		}
@@ -51,7 +53,6 @@ public class TheVoid extends JavaPlugin {
 			infoRegistry.registerSchematic(new BaseSchematic(file));
 		}
 		game = new VoidGame(this, infoRegistry, objectRegistry);
-		game.getRegistry().registerDataObjectCreator("walkable", ArenaWalkable.class);
 		game.setSpawn(new Location(Bukkit.getWorld("world"), 0.5, 101.5, 0.5));
 		thread = new GameThread("TheVoid - Game thread", game);
 		Listeners.registerListener(new BukkitListener(game, this));

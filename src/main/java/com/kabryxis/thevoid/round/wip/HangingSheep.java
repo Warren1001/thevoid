@@ -5,7 +5,7 @@ import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import com.kabryxis.thevoid.api.schematic.Schematic;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -18,7 +18,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 import java.io.File;
 
-public class HangingSheep extends AbstractRound {
+public class HangingSheep extends VoidRound {
 	
 	private final Schematic fenceSchematic;
 	
@@ -36,7 +36,7 @@ public class HangingSheep extends AbstractRound {
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		World world = arena.getWorld().getWorld();
+		World world = arena.getWorld();
 		BukkitThreads.sync(() -> arena.getSchematicData(fenceSchematic).getExtraWork(HangingSheepWork.class).getFenceBlocks().forEach(block -> {
 			for(int i = 0; i < 3; i++) {
 				Sheep sheep = world.spawn(block.getLocation().subtract(0, 1.5, 0), Sheep.class);
@@ -72,5 +72,8 @@ public class HangingSheep extends AbstractRound {
 	public void generateDefaults() {
 		useDefaults();
 	}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

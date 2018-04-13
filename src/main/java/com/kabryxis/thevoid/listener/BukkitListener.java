@@ -2,7 +2,7 @@ package com.kabryxis.thevoid.listener;
 
 import com.kabryxis.kabutils.spigot.event.GlobalListener;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
-import com.kabryxis.kabutils.spigot.world.WorldManager;
+import com.kabryxis.kabutils.spigot.world.ChunkLoader;
 import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.game.VoidGame;
@@ -155,7 +155,7 @@ public class BukkitListener implements GlobalListener {
 			break;
 		case "ChunkUnloadEvent":
 			ChunkUnloadEvent cue = (ChunkUnloadEvent)event;
-			if(WorldManager.shouldChunkStayLoaded(cue.getChunk())) cue.setCancelled(true);
+			if(ChunkLoader.shouldStayLoaded(cue.getChunk())) cue.setCancelled(true);
 			break;
 		case "FoodLevelChangeEvent":
 		case "BlockFormEvent":

@@ -1,35 +1,40 @@
 package com.kabryxis.thevoid.round.disintegrate;
 
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.metadata.MetadataValue;
-
+import com.kabryxis.kabutils.cache.Cache;
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.concurrent.thread.PausableThread;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
+import com.kabryxis.kabutils.spigot.concurrent.DelayedAction;
+import com.kabryxis.kabutils.spigot.entity.DelayedEntityRemover;
 import com.kabryxis.kabutils.spigot.metadata.Metadata;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.metadata.MetadataValue;
+
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DisintegrateThread extends PausableThread {
 	
 	private final Queue<DisintegrateBlock> cache = new ConcurrentLinkedQueue<>();
+	private final Set<DisintegrateBlock> active = ConcurrentHashMap.newKeySet();
+	private final Set<DelayedEntityRemover> sandSet = ConcurrentHashMap.newKeySet();
+	private final Runnable action = () -> {
+		//synchronized(active) {
+			active.removeIf(DisintegrateBlock::test);
+		//}
+		//synchronized(sandSet) {
+			sandSet.removeIf(DelayedEntityRemover::test);
+		//}
+	};
 	
 	private final Material[] levels;
 	private final String key;
 	private final long interval;
 	private final MetadataValue value = Metadata.getEmptyMetadataValue();
-	private final Set<DisintegrateBlock> active = new HashSet<>(), queue = new HashSet<>();
-	
-	private final Runnable action = () -> {
-		long t = System.currentTimeMillis();
-		active.removeIf(block -> block.update(t));
-		active.addAll(queue);
-		queue.clear();
-	};
 	
 	public DisintegrateThread(String name, Material[] levels, String key, long interval) {
 		super(name);
@@ -38,6 +43,41 @@ public class DisintegrateThread extends PausableThread {
 		this.interval = interval;
 	}
 	
+	public void add(Block block) {
+		if(!isPaused() && isRunning()) {
+			DisintegrateBlock db = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
+			db.reuse(block);
+			//synchronized(active) {
+				active.add(db);
+			//}
+		}
+	}
+	
+	public void queueSand(Entity sand) {
+		DelayedEntityRemover remover = Cache.get(DelayedEntityRemover.class);
+		remover.reuse(sand, System.currentTimeMillis() + 500L);
+		//synchronized(sandSet) {
+			sandSet.add(remover);
+		//}
+	}
+	
+	@Override
+	public void onPause() {
+		BukkitThreads.sync(() -> {
+			//synchronized(active) {
+				active.forEach(DisintegrateBlock::cache);
+				active.clear();
+			//}
+			//synchronized(sandSet) {
+				sandSet.forEach(DelayedEntityRemover::cache);
+				sandSet.clear();
+			//}
+		});
+	}
+	
+	@Override
+	public void onUnpause() {}
+	
 	@Override
 	public void run() {
 		while(isRunning()) {
@@ -45,44 +85,27 @@ public class DisintegrateThread extends PausableThread {
 			BukkitThreads.sync(action);
 			Threads.sleep(50);
 		}
-		clear();
+		onPause();
 	}
 	
-	@Override
-	public void onPause() {
-		clear();
-	}
-	
-	@Override
-	public void onUnpause() {}
-	
-	public void add(Block block) {
-		if(!isPaused() && isRunning()) {
-			DisintegrateBlock db = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
-			db.reuse(block);
-			queue.add(db);
-		}
-	}
-	
-	private void clear() {
-		BukkitThreads.sync(() -> {
-			active.forEach(DisintegrateBlock::cache);
-			active.clear();
-		});
-	}
-	
-	private class DisintegrateBlock {
+	private class DisintegrateBlock implements DelayedAction {
 		
 		private Block block;
 		
 		private int index = -1;
 		private long last = 0L;
 		
-		private boolean update(long currentTime) {
+		public void reuse(Block block) {
+			this.block = block;
+		}
+		
+		@Override
+		public boolean test() {
 			if(index == levels.length - 1) {
 				cache();
 				return true;
 			}
+			long currentTime = System.currentTimeMillis();
 			if(currentTime - last > interval) {
 				last = currentTime;
 				if(index == -1) block.setMetadata(key, value);
@@ -92,11 +115,8 @@ public class DisintegrateThread extends PausableThread {
 			return false;
 		}
 		
-		private void reuse(Block block) {
-			this.block = block;
-		}
-		
-		private void cache() {
+		@Override
+		public void cache() {
 			block.removeMetadata(key, value.getOwningPlugin());
 			block = null;
 			index = -1;

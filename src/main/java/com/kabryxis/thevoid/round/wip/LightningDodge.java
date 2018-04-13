@@ -3,9 +3,10 @@ package com.kabryxis.thevoid.round.wip;
 import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -22,7 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class LightningDodge extends AbstractRound {
+public class LightningDodge extends VoidRound {
 	
 	private final Set<BukkitTask> tasks = new HashSet<>();
 	
@@ -37,7 +38,7 @@ public class LightningDodge extends AbstractRound {
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		List<Location> locs = arena.getWalkableLocations();
+		List<Location> locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		mainTask = BukkitThreads.syncTimer(() -> {
 			for(int i = 0; i < 2; i++) {
 				Location loc = Randoms.getRandom(locs).clone().add(0, 1.25, 0);
@@ -118,5 +119,8 @@ public class LightningDodge extends AbstractRound {
 			loc.getWorld().playEffect(loc, Effect.COLOURED_DUST, 2);
 		}
 	}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

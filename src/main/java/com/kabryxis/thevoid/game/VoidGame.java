@@ -3,17 +3,16 @@ package com.kabryxis.thevoid.game;
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.data.DataQueue;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.kabutils.spigot.version.wrapper.WrapperCache;
+import com.kabryxis.kabutils.spigot.version.WrappableCache;
 import com.kabryxis.kabutils.spigot.version.wrapper.packet.out.chat.WrappedPacketPlayOutChat;
+import com.kabryxis.kabutils.spigot.world.ChunkLoader;
 import com.kabryxis.kabutils.spigot.world.Teleport;
-import com.kabryxis.kabutils.spigot.world.WorldManager;
 import com.kabryxis.kabutils.time.CountdownManager;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.object.ArenaDataObjectRegistry;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
 import com.kabryxis.thevoid.api.round.Round;
 import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
@@ -36,7 +35,7 @@ public class VoidGame implements Game {
 	private final Logger logger = Logger.getLogger(name);
 	private final List<Gamer> gamers = new ArrayList<>();
 	private final DataQueue<RoundInfo> infos = new DataQueue<>();
-	private final WrappedPacketPlayOutChat<?> actionMessage = WrapperCache.get(WrappedPacketPlayOutChat.class);
+	private final WrappedPacketPlayOutChat<?> actionMessage = WrappableCache.get(WrappedPacketPlayOutChat.class);
 	private final Board board = new Board(this);
 	private final CountdownManager cm = new CountdownManager();
 	
@@ -45,6 +44,7 @@ public class VoidGame implements Game {
 	private final ArenaDataObjectRegistry objectRegistry;
 	
 	private Location spawn;
+	private int alive;
 	
 	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, ArenaDataObjectRegistry objectRegistry) {
 		this.plugin = plugin;
@@ -52,6 +52,8 @@ public class VoidGame implements Game {
 		this.objectRegistry = objectRegistry;
 		cm.constructNewCountdown("preGame", 1000, false, time -> broadcastMessage("Starting in " + time + " seconds."));
 		cm.constructNewCountdown("gameTimer", 1000, true, time -> {
+			RoundInfo roundInfo = getCurrentRoundInfo();
+			roundInfo.getRound().tick(this, roundInfo.getArena(), time);
 			actionMessage.newInstance(ChatColor.GOLD.toString() + time);
 			forEachGamer(gamer -> {
 				gamer.sendPacket(actionMessage);
@@ -102,6 +104,7 @@ public class VoidGame implements Game {
 	public void next() {
 		infos.nextIndex();
 		Collections.shuffle(gamers);
+		alive = gamers.size();
 	}
 	
 	@Override
@@ -109,21 +112,18 @@ public class VoidGame implements Game {
 		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
-		Location[] spawns = Teleport.getEquidistantPoints(arena.getCurrentSchematicData().getCenter(), gamers.size(), arena.getCurrentSchematicData().getSchematic().getRadius());
-		for(int i = 0; i < spawns.length; i++) {
-			Gamer gamer = gamers.get(i);
-			gamer.setRoundPoints(0, true);
-			Location spawn = spawns[i];
-			if(gamer.isAlive()) gamer.teleport(spawn);
-			else gamer.revive(spawn);
-		}
-		if(round instanceof AbstractRound) {
-			AbstractRound baseRound = (AbstractRound)round;
-			forEachGamer(gamer -> {
-				gamer.setInventory(baseRound.getInventory(), baseRound.getArmor());
-				gamer.setRoundPoints(baseRound.getStartingPoints(), false);
-			});
-		}
+		Location[] spawns = Teleport.getEquidistantPoints(arena.getCurrentSchematicData().getCenter().clone().add(0, 0.75, 0), gamers.size(), arena.getCurrentSchematicData().getSchematic().getRadius());
+		BukkitThreads.sync(() -> {
+			for(int i = 0; i < spawns.length; i++) {
+				Gamer gamer = gamers.get(i);
+				gamer.setRoundPoints(0, true);
+				Location spawn = spawns[i];
+				if(gamer.isAlive()) gamer.teleport(spawn);
+				else gamer.revive(spawn);
+				gamer.setInventory(round.getInventory(), round.getArmor());
+				gamer.setRoundPoints(round.getStartingPoints(), false);
+			}
+		});
 		round.start(this, arena);
 		if(infos.hasNext()) infos.getNext().load(this);
 	}
@@ -152,7 +152,8 @@ public class VoidGame implements Game {
 		});
 		Threads.sleep(3500);
 		board.nextRound();
-		BukkitThreads.syncLater(() -> info.getArena().eraseSchematic(), 5);
+		//BukkitThreads.syncLater(() -> info.getArena().eraseSchematic(), 5);
+		info.getArena().eraseSchematic();
 	}
 	
 	@Override
@@ -213,6 +214,12 @@ public class VoidGame implements Game {
 		gamers.remove(gamer);
 	}
 	
+	@Override
+	public void died(Gamer gamer) {
+		alive--;
+		if(alive < 2) cm.getCountdown("gameTimer").setTime(0);
+	}
+	
 	public ArenaDataObjectRegistry getRegistry() {
 		return objectRegistry;
 	}
@@ -222,9 +229,9 @@ public class VoidGame implements Game {
 	}
 	
 	public void setSpawn(Location loc) {
-		if(spawn != null) WorldManager.removeChunkFromMemory(name, spawn.getChunk());
+		if(spawn != null) ChunkLoader.releaseFromMemory(this);
 		spawn = loc;
-		WorldManager.keepChunkInMemory(name, spawn.getChunk());
+		ChunkLoader.keepInMemory(this, spawn.getChunk());
 	}
 	
 	public void addRounds(int amount) {

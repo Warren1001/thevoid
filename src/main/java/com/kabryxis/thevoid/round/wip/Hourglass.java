@@ -1,17 +1,13 @@
 package com.kabryxis.thevoid.round.wip;
 
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import com.kabryxis.thevoid.api.schematic.Schematic;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.Event;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.util.Collections;
@@ -19,7 +15,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class Hourglass extends AbstractRound {
+public class Hourglass extends VoidRound {
 	
 	private final Random rand = new Random();
 	
@@ -33,7 +29,7 @@ public class Hourglass extends AbstractRound {
 	@Override
 	public void generateDefaults() {
 		config.set("round-length", -1);
-		config.set("world-names", AbstractRound.DEFAULT_worldNames);
+		config.set("world-names", VoidRound.DEFAULT_worldNames);
 		config.set("schematics", Collections.singletonList("hourglass"));
 	}
 	
@@ -73,7 +69,7 @@ public class Hourglass extends AbstractRound {
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		for(int i = 0; i < data.length; i++) {
+		/*for(int i = 0; i < data.length; i++) {
 			int level = i;
 			int[][] locs = data[i];
 			BukkitThreads.syncTimer(new BukkitRunnable() {
@@ -89,7 +85,7 @@ public class Hourglass extends AbstractRound {
 						return;
 					}
 					for(int i = 0; i < amount; i++) {
-						int[] loc = locs[/*index*/rand.nextInt(locs.length)];
+						int[] loc = locs[rand.nextInt(locs.length)];
 						Block block = arena.getBlock(loc[0], loc[1] + 1, loc[2]);
 						if(rand.nextInt(100) + 1 < chance && block.getType() == Material.AIR) block.setType(Material.SAND);
 					}
@@ -98,7 +94,7 @@ public class Hourglass extends AbstractRound {
 				}
 				
 			}, i * 40L, 3L);
-		}
+		}*/
 	}
 	
 	private boolean canRun() {
@@ -116,5 +112,8 @@ public class Hourglass extends AbstractRound {
 	
 	@Override
 	public void fell(Game game, Gamer gamer) {}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

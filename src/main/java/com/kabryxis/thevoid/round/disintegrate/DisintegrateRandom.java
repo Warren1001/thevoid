@@ -1,7 +1,13 @@
 package com.kabryxis.thevoid.round.disintegrate;
 
-import java.util.List;
-
+import com.kabryxis.kabutils.concurrent.Threads;
+import com.kabryxis.kabutils.random.Randoms;
+import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,16 +16,9 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 
-import com.kabryxis.kabutils.concurrent.Threads;
-import com.kabryxis.kabutils.random.Randoms;
-import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
+import java.util.List;
 
-public class DisintegrateRandom extends AbstractRound {
+public class DisintegrateRandom extends VoidRound {
 	
 	private static final String id = "disintegrateRandom";
 	
@@ -46,7 +45,7 @@ public class DisintegrateRandom extends AbstractRound {
 		}
 		else thread.unpause();
 		Threads.start(() -> {
-			List<Location> locs = arena.getWalkableLocations();
+			List<Location> locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 			Threads.sleep(1500);
 			while(thread.isRunning() && !thread.isPaused() && !locs.isEmpty()) {
 				Threads.sleep(50);
@@ -67,9 +66,7 @@ public class DisintegrateRandom extends AbstractRound {
 	public void event(Game game, Event eve) {
 		if(eve instanceof EntityChangeBlockEvent) {
 			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) {
-				BukkitThreads.syncLater(() -> event.getEntity().remove(), 10L);
-			}
+			if(event.getEntityType() == EntityType.FALLING_BLOCK) thread.queueSand(event.getEntity());
 		}
 	}
 	
@@ -91,5 +88,8 @@ public class DisintegrateRandom extends AbstractRound {
 	
 	@Override
 	public void load(Game game, Arena arena) {}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

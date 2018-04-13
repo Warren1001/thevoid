@@ -1,5 +1,10 @@
 package com.kabryxis.thevoid.round;
 
+import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
+import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
@@ -7,13 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
-import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.AbstractRound;
-
-public class Knockback extends AbstractRound {
+public class Knockback extends VoidRound {
 	
 	public Knockback() {
 		super("knockback", 1);
@@ -52,5 +51,8 @@ public class Knockback extends AbstractRound {
 	public void generateDefaults() {
 		useDefaults();
 	}
+	
+	@Override
+	public void tick(Game game, Arena arena, int i) {}
 	
 }

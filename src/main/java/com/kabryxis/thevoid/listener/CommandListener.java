@@ -1,12 +1,17 @@
 package com.kabryxis.thevoid.listener;
 
+import com.boydti.fawe.FaweAPI;
+import com.boydti.fawe.util.EditSessionBuilder;
 import com.kabryxis.kabutils.command.Com;
 import com.kabryxis.kabutils.spigot.command.BukkitCommandIssuer;
-import com.kabryxis.kabutils.spigot.world.WorldManager;
 import com.kabryxis.thevoid.TheVoid;
+import com.kabryxis.thevoid.api.arena.ArenaEntry;
 import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.schematic.BaseSchematic;
 import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.regions.CuboidRegion;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -47,31 +52,26 @@ public class CommandListener {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 2) {
 			new Schematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Boolean.parseBoolean(args[1]));
+			return true;
 		}
-		else if(args.length == 5) {
-			new BaseSchematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]), Integer.parseInt(args[1]));
+		else if(args.length == 6) {
+			new BaseSchematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]),
+					Double.parseDouble(args[4]), Integer.parseInt(args[1]), Boolean.parseBoolean(args[5]));
 			return true;
 		}
 		return false;
 	}
+	
+	private EditSession session = new EditSessionBuilder(FaweAPI.getWorld("world")).fastmode(true).build();
 	
 	@Com(aliases = {"erase"})
 	public boolean onErase(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
 			Chunk chunk = issuer.getPlayer().getLocation().getChunk();
-			WorldManager.getWorld(chunk.getWorld()).eraseChunk(chunk.getX(), chunk.getZ());
-			return true;
-		}
-		return false;
-	}
-	
-	@Com(aliases = {"refresh"})
-	public boolean onRefresh(BukkitCommandIssuer issuer, String alias, String[] args) {
-		if(!issuer.isPlayer()) return false;
-		if(args.length == 0) {
-			Chunk chunk = issuer.getPlayer().getLocation().getChunk();
-			WorldManager.getWorld(chunk.getWorld()).refreshChunk(chunk.getX(), chunk.getZ());
+			Location min = chunk.getBlock(0, 0, 0).getLocation(), max = chunk.getBlock(15, 255, 15).getLocation();
+			session.setBlocks(new CuboidRegion(new Vector(min.getBlockX(), min.getBlockY(), min.getBlockZ()), new Vector(max.getBlockX(), max.getBlockY(), max.getBlockZ())), ArenaEntry.AIR);
+			session.flushQueue();
 			return true;
 		}
 		return false;
@@ -199,6 +199,7 @@ public class CommandListener {
 		if(args.length == 0) {
 			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
 			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentSchematicData().getCenter());
+			return true;
 		}
 		return false;
 	}
