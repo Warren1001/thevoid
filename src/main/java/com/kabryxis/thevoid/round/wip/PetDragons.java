@@ -2,7 +2,6 @@ package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -66,26 +65,10 @@ public class PetDragons extends VoidRound {
 		}
 	}
 	
-	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
 	private void setTarget(Player owner, Player target) {
 		//dragons.get(Gamer.getGamer(owner)).setTarget(Gamer.getGamer(target));
 		owner.sendMessage("Your dragon is now targeting " + target.getDisplayName() + "!");
 	}
-	
-	@Override
-	public void load(Game game, Arena arena) {}
-	
-	@Override
-	public void end(Game game, Arena arena) {}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 	
 	

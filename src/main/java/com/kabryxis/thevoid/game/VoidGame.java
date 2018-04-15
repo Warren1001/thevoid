@@ -50,10 +50,10 @@ public class VoidGame implements Game {
 		this.plugin = plugin;
 		this.infoRegistry = infoRegistry;
 		this.objectRegistry = objectRegistry;
-		cm.constructNewCountdown("preGame", 1000, false, time -> broadcastMessage("Starting in " + time + " seconds."));
-		cm.constructNewCountdown("gameTimer", 1000, true, time -> {
+		cm.constructNewCountdown("preGame", 1000, false, (time, timeLeft) -> broadcastMessage("Starting in " + time + " seconds."));
+		cm.constructNewCountdown("gameTimer", 1000, true, (time, timeLeft) -> {
 			RoundInfo roundInfo = getCurrentRoundInfo();
-			roundInfo.getRound().tick(this, roundInfo.getArena(), time);
+			roundInfo.getRound().tick(this, roundInfo.getArena(), time, timeLeft);
 			actionMessage.newInstance(ChatColor.GOLD.toString() + time);
 			forEachGamer(gamer -> {
 				gamer.sendPacket(actionMessage);
@@ -134,7 +134,7 @@ public class VoidGame implements Game {
 		Round round = info.getRound();
 		int roundLength = round.getRoundLength();
 		if(roundLength == -1) round.customTimer();
-		else cm.count("gameTimer", roundLength);
+		else cm.count("gameTimer", (int)Math.ceil((double)roundLength * info.getSchematic().getTimeModifier()));
 	}
 	
 	@Override
@@ -217,7 +217,7 @@ public class VoidGame implements Game {
 	@Override
 	public void died(Gamer gamer) {
 		alive--;
-		if(alive < 2) cm.getCountdown("gameTimer").setTime(0);
+		if(alive < 2) cm.getCountdown("gameTimer").setCurrentTime(0);
 	}
 	
 	public ArenaDataObjectRegistry getRegistry() {

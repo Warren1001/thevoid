@@ -54,21 +54,21 @@ public class CommandListener {
 			new Schematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Boolean.parseBoolean(args[1]));
 			return true;
 		}
-		else if(args.length == 6) {
+		else if(args.length == 7) {
 			new BaseSchematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]),
-					Double.parseDouble(args[4]), Integer.parseInt(args[1]), Boolean.parseBoolean(args[5]));
+					Double.parseDouble(args[4]), Integer.parseInt(args[1]), Integer.parseInt(args[6]), Boolean.parseBoolean(args[5]));
 			return true;
 		}
 		return false;
 	}
 	
-	private EditSession session = new EditSessionBuilder(FaweAPI.getWorld("world")).fastmode(true).build();
-	
 	@Com(aliases = {"erase"})
 	public boolean onErase(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Chunk chunk = issuer.getPlayer().getLocation().getChunk();
+			Player player = issuer.getPlayer();
+			EditSession session = new EditSessionBuilder(FaweAPI.getWorld(player.getWorld().getName())).fastmode(true).build();
+			Chunk chunk = player.getLocation().getChunk();
 			Location min = chunk.getBlock(0, 0, 0).getLocation(), max = chunk.getBlock(15, 255, 15).getLocation();
 			session.setBlocks(new CuboidRegion(new Vector(min.getBlockX(), min.getBlockY(), min.getBlockZ()), new Vector(max.getBlockX(), max.getBlockY(), max.getBlockZ())), ArenaEntry.AIR);
 			session.flushQueue();
@@ -185,7 +185,7 @@ public class CommandListener {
 			}
 			else if(args[0].equalsIgnoreCase("set") && args.length == 3) {
 				if(args[1].equalsIgnoreCase("time")) {
-					plugin.getGame().getCountdownManager().getCurrentlyActive(plugin.getThread()).setTime(Integer.parseInt(args[2]) + 1);
+					plugin.getGame().getCountdownManager().getCurrentlyActive(plugin.getThread()).setCurrentTime(Integer.parseInt(args[2]) + 1);
 					return true;
 				}
 			}

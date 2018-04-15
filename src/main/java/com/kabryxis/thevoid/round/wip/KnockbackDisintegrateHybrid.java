@@ -3,10 +3,10 @@ package com.kabryxis.thevoid.round.wip;
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.data.Data;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
+import com.kabryxis.kabutils.time.TimeLeft;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.VoidRound;
 import com.kabryxis.thevoid.round.disintegrate.DisintegrateThread;
 import org.bukkit.Location;
@@ -14,10 +14,8 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 import java.util.List;
@@ -27,9 +25,8 @@ public class KnockbackDisintegrateHybrid extends VoidRound {
 	
 	private static final String id = "disintegrateHybrid";
 	
-	private final Material[] levels = { Material.OBSIDIAN, Material.NETHERRACK, Material.TNT, Material.SAND };
-	private final String metadataKey = id;
-	private final DisintegrateThread thread = new DisintegrateThread(id, levels, metadataKey, 750L);
+	private final Material[] levels = { Material.OBSIDIAN, Material.NETHERRACK, Material.TNT };
+	private final DisintegrateThread thread = new DisintegrateThread(id, levels, id, 750L);
 	
 	public KnockbackDisintegrateHybrid() {
 		super(id, 1);
@@ -44,11 +41,8 @@ public class KnockbackDisintegrateHybrid extends VoidRound {
 	}
 	
 	@Override
-	public void start(Game game, Arena arena) {}
-	
-	@Override
-	public void tick(Game game, Arena arena, int timeLeft) {
-		if(timeLeft == 25) {
+	public void tick(Game game, Arena arena, int time, TimeLeft timeLeft) {
+		if(timeLeft == TimeLeft.HALF) {
 			if(!thread.isRunning()) thread.start();
 			else thread.unpause();
 			Threads.start(() -> {
@@ -57,7 +51,7 @@ public class KnockbackDisintegrateHybrid extends VoidRound {
 				for(int i = diamondPatternBlocks.size() - 1; i >= 0 && !thread.isPaused(); i--) {
 					Set<Block> blocks = diamondPatternBlocks.get(i);
 					if(blocks != null) {
-						blocks.forEach(this::disintegrate);
+						blocks.forEach(thread::add);
 						Threads.sleep(1000);
 					}
 				}
@@ -80,21 +74,6 @@ public class KnockbackDisintegrateHybrid extends VoidRound {
 				event.setDamage(0);
 			}
 		}
-		else if(eve instanceof EntityChangeBlockEvent) {
-			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) thread.queueSand(event.getEntity());
-		}
-	}
-	
-	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
-	public void disintegrate(Block block) {
-		if(!block.hasMetadata(metadataKey)) thread.add(block);
 	}
 	
 	@Override

@@ -3,11 +3,9 @@ package com.kabryxis.thevoid.round.wip;
 import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.VoidRound;
 import com.kabryxis.thevoid.api.schematic.Schematic;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.event.Event;
 
 import java.io.File;
 import java.util.Collections;
@@ -106,14 +104,5 @@ public class Hourglass extends VoidRound {
 		data = null;
 		chances = null;
 	}
-	
-	@Override
-	public void event(Game game, Event event) {}
-	
-	@Override
-	public void fell(Game game, Gamer gamer) {}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }

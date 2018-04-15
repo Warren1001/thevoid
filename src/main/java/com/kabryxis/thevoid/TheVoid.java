@@ -8,6 +8,7 @@ import com.kabryxis.kabutils.spigot.event.Listeners;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.object.ArenaDataObjectRegistry;
 import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.game.VoidGameGenerator;
 import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
 import com.kabryxis.thevoid.api.schematic.BaseSchematic;
 import com.kabryxis.thevoid.api.schematic.Schematic;
@@ -17,8 +18,7 @@ import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
 import com.kabryxis.thevoid.listener.BukkitListener;
 import com.kabryxis.thevoid.listener.CommandListener;
 import com.kabryxis.thevoid.round.wip.KnockbackDisintegrateHybrid;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -37,6 +37,7 @@ public class TheVoid extends JavaPlugin {
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
+		setupWorlds();
 		commandManager = new CommandManager();
 		commandManager.addExtraWork(new CommandMapHook(commandManager));
 		commandManager.registerListener(new CommandListener(this));
@@ -53,7 +54,7 @@ public class TheVoid extends JavaPlugin {
 			infoRegistry.registerSchematic(new BaseSchematic(file));
 		}
 		game = new VoidGame(this, infoRegistry, objectRegistry);
-		game.setSpawn(new Location(Bukkit.getWorld("world"), 0.5, 101.5, 0.5));
+		game.setSpawn(new Location(Bukkit.getWorld("lobby"), 0.5, 101.5, 0.5));
 		thread = new GameThread("TheVoid - Game thread", game);
 		Listeners.registerListener(new BukkitListener(game, this));
 	}
@@ -78,6 +79,23 @@ public class TheVoid extends JavaPlugin {
 		if(game == null || thread == null) return;
 		game.addRounds(rounds);
 		thread.start();
+	}
+	
+	public void setupWorlds() {
+		VoidGameGenerator worldGenerator = new VoidGameGenerator();
+		WorldCreator overworldCreator = new WorldCreator("void_overworld");
+		overworldCreator.environment(World.Environment.NORMAL);
+		overworldCreator.type(WorldType.FLAT);
+		overworldCreator.generator(worldGenerator);
+		overworldCreator.createWorld();
+		WorldCreator netherCreator = new WorldCreator("void_nether");
+		netherCreator.environment(World.Environment.NETHER);
+		netherCreator.generator(worldGenerator);
+		netherCreator.createWorld();
+		WorldCreator endCreator = new WorldCreator("void_end");
+		endCreator.environment(World.Environment.THE_END);
+		endCreator.generator(worldGenerator);
+		endCreator.createWorld();
 	}
 	
 }

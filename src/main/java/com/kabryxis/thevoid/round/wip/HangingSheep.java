@@ -49,9 +49,6 @@ public class HangingSheep extends VoidRound {
 	}
 	
 	@Override
-	public void end(Game game, Arena arena) {}
-	
-	@Override
 	public void event(Game game, Event eve) {
 		if(eve instanceof EntityDamageByEntityEvent) {
 			EntityDamageByEntityEvent event = (EntityDamageByEntityEvent)eve;
@@ -67,13 +64,5 @@ public class HangingSheep extends VoidRound {
 		gamer.kill();
 		gamer.teleport(20);
 	}
-	
-	@Override
-	public void generateDefaults() {
-		useDefaults();
-	}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }

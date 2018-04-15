@@ -34,7 +34,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	private final Random rand = new Random();
 	private final ItemStack air = new ItemStack(Material.AIR);
 	private final Vector velocity = new Vector(0, -1.25, 0);
-	private final DelayedActionThread sandRemover = new DelayedActionThread("Sand remover - Anvilstorm");
+	private final DelayedActionThread sandRemover = new DelayedActionThread("Anvil remover - Anvilstorm");
 	
 	private List<Location> locs = null;
 	private BukkitTask task = null;
@@ -42,9 +42,6 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	public Anvilstorm() {
 		super("anvilstorm", 1);
 	}
-	
-	@Override
-	public void load(Game game, Arena arena) {}
 	
 	@Override
 	public void start(Game game, Arena arena) {
@@ -86,7 +83,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 				sandRemover.add(remover);
 			}
 		}
-		else if(eve instanceof EntityDamageEvent) { // TODO might not work
+		else if(eve instanceof EntityDamageEvent) { // TODO doesnt work??
 			System.out.println("1");
 			EntityDamageEvent event = (EntityDamageEvent)eve;
 			if(event.getCause() == DamageCause.FALLING_BLOCK) {
@@ -99,20 +96,10 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	}
 	
 	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
-	@Override
 	public void generateDefaults() {
 		config.set("round-length", 45);
 		config.set("world-names", Collections.singletonList("world"));
 		config.set("schematics", Collections.singletonList("rainbow"));
 	}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }

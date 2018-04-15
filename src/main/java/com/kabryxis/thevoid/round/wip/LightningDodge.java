@@ -34,9 +34,6 @@ public class LightningDodge extends VoidRound {
 	}
 	
 	@Override
-	public void load(Game game, Arena arena) {}
-	
-	@Override
 	public void start(Game game, Arena arena) {
 		List<Location> locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		mainTask = BukkitThreads.syncTimer(() -> {
@@ -83,30 +80,13 @@ public class LightningDodge extends VoidRound {
 			Entity entity = event.getEntity();
 			if(entity instanceof Player) {
 				Player player = (Player)entity;
-				if(event.getCause() == DamageCause.LIGHTNING) {
-					Gamer gamer = Gamer.getGamer(player);
-					gamer.decrementRoundPoints(false);
-					gamer.kill();
-					gamer.teleport(20);
-				}
+				if(event.getCause() == DamageCause.LIGHTNING) fell(game, Gamer.getGamer(player));
 			}
 		}
 		else if(eve instanceof BlockIgniteEvent) {
 			BlockIgniteEvent event = (BlockIgniteEvent)eve;
 			if(event.getCause() == IgniteCause.LIGHTNING) event.setCancelled(true);
 		}
-	}
-	
-	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
-	@Override
-	public void generateDefaults() {
-		useDefaults();
 	}
 	
 	public void spawnParticles(Location center, double radius, int points) {
@@ -119,8 +99,5 @@ public class LightningDodge extends VoidRound {
 			loc.getWorld().playEffect(loc, Effect.COLOURED_DUST, 2);
 		}
 	}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }

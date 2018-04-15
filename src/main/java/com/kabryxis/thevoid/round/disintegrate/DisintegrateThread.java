@@ -1,15 +1,12 @@
 package com.kabryxis.thevoid.round.disintegrate;
 
-import com.kabryxis.kabutils.cache.Cache;
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.concurrent.thread.PausableThread;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.concurrent.DelayedAction;
-import com.kabryxis.kabutils.spigot.entity.DelayedEntityRemover;
 import com.kabryxis.kabutils.spigot.metadata.Metadata;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
 import org.bukkit.metadata.MetadataValue;
 
 import java.util.Queue;
@@ -21,15 +18,7 @@ public class DisintegrateThread extends PausableThread {
 	
 	private final Queue<DisintegrateBlock> cache = new ConcurrentLinkedQueue<>();
 	private final Set<DisintegrateBlock> active = ConcurrentHashMap.newKeySet();
-	private final Set<DelayedEntityRemover> sandSet = ConcurrentHashMap.newKeySet();
-	private final Runnable action = () -> {
-		//synchronized(active) {
-			active.removeIf(DisintegrateBlock::test);
-		//}
-		//synchronized(sandSet) {
-			sandSet.removeIf(DelayedEntityRemover::test);
-		//}
-	};
+	private final Runnable action = () -> active.removeIf(DisintegrateBlock::test);
 	
 	private final Material[] levels;
 	private final String key;
@@ -44,34 +33,26 @@ public class DisintegrateThread extends PausableThread {
 	}
 	
 	public void add(Block block) {
-		if(!isPaused() && isRunning()) {
+		if(isRunning() && !isPaused() && block.getType() != Material.AIR && !block.hasMetadata(key)) {
 			DisintegrateBlock db = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
 			db.reuse(block);
-			//synchronized(active) {
-				active.add(db);
-			//}
+			active.add(db);
+			for(int i = 0; i < 50; i++) {
+				Block aboveBlock = block.getRelative(0, i, 0);
+				if(aboveBlock.getType() != Material.AIR && !aboveBlock.hasMetadata(key)) {
+					DisintegrateBlock aboveDb = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
+					aboveDb.reuse(aboveBlock);
+					active.add(aboveDb);
+				}
+			}
 		}
-	}
-	
-	public void queueSand(Entity sand) {
-		DelayedEntityRemover remover = Cache.get(DelayedEntityRemover.class);
-		remover.reuse(sand, System.currentTimeMillis() + 500L);
-		//synchronized(sandSet) {
-			sandSet.add(remover);
-		//}
 	}
 	
 	@Override
 	public void onPause() {
 		BukkitThreads.sync(() -> {
-			//synchronized(active) {
-				active.forEach(DisintegrateBlock::cache);
-				active.clear();
-			//}
-			//synchronized(sandSet) {
-				sandSet.forEach(DelayedEntityRemover::cache);
-				sandSet.clear();
-			//}
+			active.forEach(DisintegrateBlock::cache);
+			active.clear();
 		});
 	}
 	
@@ -92,7 +73,7 @@ public class DisintegrateThread extends PausableThread {
 		
 		private Block block;
 		
-		private int index = -1;
+		private int index = 0;
 		private long last = 0L;
 		
 		public void reuse(Block block) {
@@ -101,16 +82,17 @@ public class DisintegrateThread extends PausableThread {
 		
 		@Override
 		public boolean test() {
-			if(index == levels.length - 1) {
-				cache();
-				return true;
-			}
 			long currentTime = System.currentTimeMillis();
 			if(currentTime - last > interval) {
+				if(index == levels.length) {
+					block.breakNaturally();
+					cache();
+					return true;
+				}
 				last = currentTime;
-				if(index == -1) block.setMetadata(key, value);
-				index++;
+				if(index == 0) block.setMetadata(key, value);
 				block.setType(levels[index]);
+				index++;
 			}
 			return false;
 		}
@@ -119,7 +101,7 @@ public class DisintegrateThread extends PausableThread {
 		public void cache() {
 			block.removeMetadata(key, value.getOwningPlugin());
 			block = null;
-			index = -1;
+			index = 0;
 			last = 0L;
 			cache.add(this);
 		}

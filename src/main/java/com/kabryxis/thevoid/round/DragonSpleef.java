@@ -3,9 +3,7 @@ package com.kabryxis.thevoid.round;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.VoidRound;
-import org.bukkit.event.Event;
 
 import java.util.Collections;
 
@@ -35,24 +33,5 @@ public class DragonSpleef extends VoidRound {
 		}, 30L);
 		
 	}
-	
-	@Override
-	public void event(Game game, Event eve) {}
-	
-	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
-	@Override
-	public void load(Game game, Arena arena) {}
-	
-	@Override
-	public void end(Game game, Arena arena) {}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }

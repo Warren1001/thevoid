@@ -6,15 +6,10 @@ import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.VoidRound;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.entity.EntityType;
-import org.bukkit.event.Event;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 
 import java.util.List;
 
@@ -22,9 +17,8 @@ public class DisintegrateRandom extends VoidRound {
 	
 	private static final String id = "disintegrateRandom";
 	
-	private final Material[] levels = { Material.OBSIDIAN, Material.NETHERRACK, Material.TNT, Material.SAND };
-	private final String metadataKey = id;
-	private final DisintegrateThread thread = new DisintegrateThread(id, levels, metadataKey, 2000L);
+	private final Material[] levels = { Material.OBSIDIAN, Material.NETHERRACK, Material.TNT };
+	private final DisintegrateThread thread = new DisintegrateThread(id, levels, id, 2000L);
 	
 	private boolean started = false;
 	
@@ -51,7 +45,7 @@ public class DisintegrateRandom extends VoidRound {
 				Threads.sleep(50);
 				for(int i = 0; i < 4; i++) {
 					if(locs.isEmpty()) break;
-					disintegrate(Randoms.getRandomAndRemove(locs).getBlock());
+					thread.add(Randoms.getRandomAndRemove(locs).getBlock());
 				}
 			}
 		});
@@ -61,35 +55,5 @@ public class DisintegrateRandom extends VoidRound {
 	public void end(Game game, Arena arena) {
 		thread.pause();
 	}
-	
-	@Override
-	public void event(Game game, Event eve) {
-		if(eve instanceof EntityChangeBlockEvent) {
-			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) thread.queueSand(event.getEntity());
-		}
-	}
-	
-	@Override
-	public void fell(Game game, Gamer gamer) {
-		gamer.decrementRoundPoints(false);
-		gamer.kill();
-		gamer.teleport(20);
-	}
-	
-	public void disintegrate(Block block) {
-		if(!block.hasMetadata(metadataKey)) thread.add(block);
-	}
-	
-	@Override
-	public void generateDefaults() {
-		useDefaults();
-	}
-	
-	@Override
-	public void load(Game game, Arena arena) {}
-	
-	@Override
-	public void tick(Game game, Arena arena, int i) {}
 	
 }
