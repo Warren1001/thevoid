@@ -64,9 +64,9 @@ public class BukkitListener implements GlobalListener {
 				if(pmeGamer.isInGame() && pmeGamer.getGame().isInProgress()) {
 					Location from = pme.getFrom(), to = pme.getTo();
 					RoundInfo info = game.getCurrentRoundInfo();
-					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentSchematicData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmeGamer, 0L) > 1000) {
+					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentArenaData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmeGamer, 0L) > 1000) {
 						pmeTimestamps.put(pmeGamer, System.currentTimeMillis());
-						info.getRound().fell(game, pmeGamer);
+						info.getRound().fell(pmeGamer);
 					}
 				}
 				else {

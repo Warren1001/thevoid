@@ -2,7 +2,7 @@ package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.round.VoidRound;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -17,7 +17,7 @@ public class PetDragons extends VoidRound {
 	//private final Map<Gamer, PetDragon> dragons = new HashMap<>();
 	
 	public PetDragons() {
-		super("petdragons", 1);
+		super("petdragons");
 	}
 	
 	@Override
@@ -29,7 +29,7 @@ public class PetDragons extends VoidRound {
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		Location center = arena.getCenter();
+		Location center = arena.getLocation();
 		/*BukkitThreads.sync(new Runnable() {
 			
 			@Override

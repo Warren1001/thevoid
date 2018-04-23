@@ -3,10 +3,10 @@ package com.kabryxis.thevoid.round.wip;
 import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.VoidRound;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -30,12 +30,12 @@ public class LightningDodge extends VoidRound {
 	private BukkitTask mainTask = null;
 	
 	public LightningDodge() {
-		super("lightningdodge", 1);
+		super("lightningdodge");
 	}
 	
 	@Override
 	public void start(Game game, Arena arena) {
-		List<Location> locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
+		List<Location> locs = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		mainTask = BukkitThreads.syncTimer(() -> {
 			for(int i = 0; i < 2; i++) {
 				Location loc = Randoms.getRandom(locs).clone().add(0, 1.25, 0);
@@ -80,7 +80,7 @@ public class LightningDodge extends VoidRound {
 			Entity entity = event.getEntity();
 			if(entity instanceof Player) {
 				Player player = (Player)entity;
-				if(event.getCause() == DamageCause.LIGHTNING) fell(game, Gamer.getGamer(player));
+				if(event.getCause() == DamageCause.LIGHTNING) fell(Gamer.getGamer(player));
 			}
 		}
 		else if(eve instanceof BlockIgniteEvent) {

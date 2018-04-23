@@ -6,11 +6,10 @@ import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.version.WrappableCache;
 import com.kabryxis.kabutils.spigot.version.wrapper.packet.out.chat.WrappedPacketPlayOutChat;
 import com.kabryxis.kabutils.spigot.world.ChunkLoader;
-import com.kabryxis.kabutils.spigot.world.Teleport;
 import com.kabryxis.kabutils.time.CountdownManager;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.ArenaDataObjectRegistry;
+import com.kabryxis.thevoid.api.arena.object.IArenaDataObjectRegistry;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.Round;
@@ -22,9 +21,8 @@ import org.bukkit.Sound;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -41,12 +39,12 @@ public class VoidGame implements Game {
 	
 	private final TheVoid plugin;
 	private final RoundInfoRegistry infoRegistry;
-	private final ArenaDataObjectRegistry objectRegistry;
+	private final IArenaDataObjectRegistry objectRegistry;
 	
 	private Location spawn;
-	private int alive;
+	private Set<Gamer> aliveGamers = ConcurrentHashMap.newKeySet();
 	
-	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, ArenaDataObjectRegistry objectRegistry) {
+	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, IArenaDataObjectRegistry objectRegistry) {
 		this.plugin = plugin;
 		this.infoRegistry = infoRegistry;
 		this.objectRegistry = objectRegistry;
@@ -88,8 +86,8 @@ public class VoidGame implements Game {
 	public void threadStart() {
 		infos.getNext().load(this);
 		forEachGamer(g -> {
-			g.setScoreboard(board.getScoreboard());
 			g.setGame(this);
+			g.setScoreboard(board.getScoreboard());
 		});
 		cm.count("preGame", 5);
 		board.start();
@@ -104,7 +102,8 @@ public class VoidGame implements Game {
 	public void next() {
 		infos.nextIndex();
 		Collections.shuffle(gamers);
-		alive = gamers.size();
+		aliveGamers.clear();
+		aliveGamers.addAll(gamers);
 	}
 	
 	@Override
@@ -112,16 +111,10 @@ public class VoidGame implements Game {
 		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
-		Location[] spawns = Teleport.getEquidistantPoints(arena.getCurrentSchematicData().getCenter().clone().add(0, 0.75, 0), gamers.size(), arena.getCurrentSchematicData().getSchematic().getRadius());
+		Location[] spawns = round.getSpawns(this, arena.getCurrentArenaData().getRadius());
 		BukkitThreads.sync(() -> {
 			for(int i = 0; i < spawns.length; i++) {
-				Gamer gamer = gamers.get(i);
-				gamer.setRoundPoints(0, true);
-				Location spawn = spawns[i];
-				if(gamer.isAlive()) gamer.teleport(spawn);
-				else gamer.revive(spawn);
-				gamer.setInventory(round.getInventory(), round.getArmor());
-				gamer.setRoundPoints(round.getStartingPoints(), false);
+				gamers.get(i).nextRound(round, spawns[i]);
 			}
 		});
 		round.start(this, arena);
@@ -144,13 +137,14 @@ public class VoidGame implements Game {
 		Arena arena = info.getArena();
 		round.end(this, arena);
 		arena.endOfRound();
-		calculateRoundWinners();
+		round.getRoundWinners(this).forEach(Gamer::incrementGamePoints);
 		forEachGamer(gamer -> {
 			gamer.setRoundPoints(0);
 			gamer.clearEffects();
 			gamer.clearInventory();
 		});
 		Threads.sleep(3500);
+		forEachGamer(gamer -> gamer.setAlive(true));
 		board.nextRound();
 		//BukkitThreads.syncLater(() -> info.getArena().eraseSchematic(), 5);
 		info.getArena().eraseSchematic();
@@ -162,11 +156,11 @@ public class VoidGame implements Game {
 		infos.clear();
 		broadcastMessage(getGameWinner().getName() + " wins!");
 		board.reset(); // Must be after game winner announcer method.
-		forEachGamer(gamer -> {
+		BukkitThreads.sync(() -> forEachGamer(gamer -> {
 			gamer.reset();
-			gamer.setGame(null);
 			gamer.teleport(spawn);
-		});
+			gamer.setGame(null);
+		}));
 	}
 	
 	@Override
@@ -202,25 +196,49 @@ public class VoidGame implements Game {
 	@Override
 	public void addGamer(Gamer gamer) {
 		gamers.add(gamer);
-		if(!isInProgress()) gamer.teleport(spawn);
-		else {
-			if(gamer.getGamePoints() == 0) gamer.setGamePoints(0);
-			gamer.kill(getCurrentRoundInfo().getArena().getCenter().clone().add(0, 20, 0));
-		}
+		gamer.setGame(this);
+		BukkitThreads.sync(() -> {
+			if(!isInProgress()) gamer.teleport(spawn);
+			else {
+				if(gamer.getGamePoints() == 0) gamer.setGamePoints(0);
+				gamer.kill();
+				gamer.teleport(getCurrentRoundInfo().getArena().getLocation().clone().add(0, 20, 0));
+			}
+		});
 	}
 	
 	@Override
 	public void removeGamer(Gamer gamer) {
 		gamers.remove(gamer);
+		gamer.setGame(null);
 	}
 	
 	@Override
-	public void died(Gamer gamer) {
-		alive--;
-		if(alive < 2) cm.getCountdown("gameTimer").setCurrentTime(0);
+	public Collection<Gamer> getGamers() {
+		return gamers;
 	}
 	
-	public ArenaDataObjectRegistry getRegistry() {
+	@Override
+	public Collection<Gamer> getAliveGamers() {
+		return aliveGamers;
+	}
+	
+	@Override
+	public boolean kill(Gamer gamer) {
+		aliveGamers.remove(gamer);
+		if(aliveGamers.size() < 2) {
+			cm.getCountdown("gameTimer").setCurrentTime(0);
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public void revive(Gamer gamer) {
+		// TODO
+	}
+	
+	public IArenaDataObjectRegistry getRegistry() {
 		return objectRegistry;
 	}
 	
@@ -240,19 +258,6 @@ public class VoidGame implements Game {
 	
 	public void broadcastMessage(String message) {
 		forEachGamer(g -> g.message(message));
-	}
-	
-	private void calculateRoundWinners() {
-		int mostPoints = 0;
-		for(Gamer gamer : gamers) {
-			int points = gamer.getRoundPoints();
-			if(points > mostPoints) mostPoints = points;
-		}
-		if(mostPoints > 0) {
-			for(Gamer gamer : gamers) {
-				if(gamer.getRoundPoints() == mostPoints) gamer.incrementGamePoints();
-			}
-		}
 	}
 	
 	private Gamer getGameWinner() {

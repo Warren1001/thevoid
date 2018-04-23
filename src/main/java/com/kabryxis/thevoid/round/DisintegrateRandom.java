@@ -1,12 +1,13 @@
-package com.kabryxis.thevoid.round.disintegrate;
+package com.kabryxis.thevoid.round;
 
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.round.VoidRound;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.round.utility.DisintegrateThread;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,12 +24,11 @@ public class DisintegrateRandom extends VoidRound {
 	private boolean started = false;
 	
 	public DisintegrateRandom() {
-		super(id, 1);
+		super(id);
 		ItemBuilder builder = new ItemBuilder(levels[0]).name(ChatColor.DARK_GRAY + "Level 1");
 		inventory[0] = builder.build();
 		inventory[1] = builder.material(levels[1]).name(ChatColor.DARK_RED + "Level 2").build();
 		inventory[2] = builder.material(levels[2]).name(ChatColor.RED + "Level 3").build();
-		inventory[3] = builder.material(levels[3]).name(ChatColor.GREEN + "Level 4").build();
 	}
 	
 	@Override
@@ -39,7 +39,7 @@ public class DisintegrateRandom extends VoidRound {
 		}
 		else thread.unpause();
 		Threads.start(() -> {
-			List<Location> locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
+			List<Location> locs = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 			Threads.sleep(1500);
 			while(thread.isRunning() && !thread.isPaused() && !locs.isEmpty()) {
 				Threads.sleep(50);

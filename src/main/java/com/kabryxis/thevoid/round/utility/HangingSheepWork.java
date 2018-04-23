@@ -1,6 +1,6 @@
-package com.kabryxis.thevoid.round.wip;
+package com.kabryxis.thevoid.round.utility;
 
-import com.kabryxis.thevoid.api.schematic.SchematicWork;
+import com.kabryxis.thevoid.api.arena.schematic.util.SchematicWork;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 

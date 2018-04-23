@@ -5,19 +5,19 @@ import com.kabryxis.kabutils.data.file.FileEndingFilter;
 import com.kabryxis.kabutils.spigot.command.CommandMapHook;
 import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.kabutils.spigot.event.Listeners;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.ArenaDataObjectRegistry;
-import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.arena.impl.VoidArena;
+import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
+import com.kabryxis.thevoid.api.arena.object.impl.VoidArenaDataObjectRegistry;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidBaseSchematic;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
 import com.kabryxis.thevoid.api.game.VoidGameGenerator;
 import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
-import com.kabryxis.thevoid.api.schematic.BaseSchematic;
-import com.kabryxis.thevoid.api.schematic.Schematic;
 import com.kabryxis.thevoid.game.GameThread;
 import com.kabryxis.thevoid.game.VoidGame;
 import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
 import com.kabryxis.thevoid.listener.BukkitListener;
 import com.kabryxis.thevoid.listener.CommandListener;
-import com.kabryxis.thevoid.round.wip.KnockbackDisintegrateHybrid;
+import com.kabryxis.thevoid.round.HotPotato;
 import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -42,17 +42,18 @@ public class TheVoid extends JavaPlugin {
 		commandManager.addExtraWork(new CommandMapHook(commandManager));
 		commandManager.registerListener(new CommandListener(this));
 		//framework.registerCommands(new UtilityListener(this));
-		ArenaDataObjectRegistry objectRegistry = new ArenaDataObjectRegistry();
-		objectRegistry.registerDataObjectCreator("walkable", ArenaWalkable.class);
+		VoidArenaDataObjectRegistry objectRegistry = new VoidArenaDataObjectRegistry();
+		objectRegistry.register("walkable", ArenaWalkable.class, ArenaWalkable::new);
 		RoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry();
-		infoRegistry.registerRounds(new KnockbackDisintegrateHybrid()/*, new HangingSheep(), new LightningDodge(), new DisintegrateRandom(), new Anvilstorm(), new DisintegrateWalk(), new Spleef()/*, new
-		Knockback()*/);
-		for(File file : new File(Arena.PATH).listFiles(new FileEndingFilter(".yml"))) {
-			Config.get(file).load(config -> infoRegistry.registerArena(new Arena(objectRegistry, config)));
+		infoRegistry.registerRounds(new HotPotato()/*new KnockbackDisintegrateHybrid(), new HangingSheep(), new DisintegrateRandom(), new DisintegrateWalk(), new Spleef()/*, new DragonSpleef()/*, new
+		Knockback(), new LightningDodge(), new Anvilstorm()*/);
+		for(File file : new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml"))) {
+			Config.get(file).load(config -> infoRegistry.registerArena(new VoidArena(objectRegistry, config)));
 		}
-		for(File file : new File(Schematic.PATH).listFiles(new FileEndingFilter(".sch"))) {
-			infoRegistry.registerSchematic(new BaseSchematic(file));
+		for(File file : new File(VoidSchematic.PATH).listFiles(new FileEndingFilter(".sch"))) {
+			infoRegistry.registerSchematic(new VoidBaseSchematic(file));
 		}
+		//infoRegistry.registerSchematic(BaseSchematic.EMPTY);
 		game = new VoidGame(this, infoRegistry, objectRegistry);
 		game.setSpawn(new Location(Bukkit.getWorld("lobby"), 0.5, 101.5, 0.5));
 		thread = new GameThread("TheVoid - Game thread", game);

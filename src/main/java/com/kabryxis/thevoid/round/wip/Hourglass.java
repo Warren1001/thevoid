@@ -2,9 +2,9 @@ package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.round.VoidRound;
-import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.io.File;
@@ -21,7 +21,7 @@ public class Hourglass extends VoidRound {
 	private int[] chances;
 	
 	public Hourglass() {
-		super("hourglass", 1);
+		super("hourglass");
 	}
 	
 	@Override
@@ -29,6 +29,7 @@ public class Hourglass extends VoidRound {
 		config.set("round-length", -1);
 		config.set("world-names", VoidRound.DEFAULT_worldNames);
 		config.set("schematics", Collections.singletonList("hourglass"));
+		config.set("weight", VoidRound.DEFAULT_weight);
 	}
 	
 	@Override
@@ -38,11 +39,11 @@ public class Hourglass extends VoidRound {
 	
 	@Override
 	public void load(Game game, Arena arena) {
-		loadHourglassData(arena.getCurrentSchematicData().getSchematic().getName());
+		loadHourglassData(arena.getCurrentArenaData().getSchematic().getName());
 	}
 	
 	private void loadHourglassData(String name) {
-		Config.get(new File(Schematic.PATH + name + "-hg.yml")).load(config -> {
+		Config.get(new File(VoidSchematic.PATH + name + "-hg.yml")).load(config -> {
 			ConfigurationSection section = config.getConfigurationSection("levels");
 			Set<String> levels = section.getKeys(false);
 			int size = levels.size();

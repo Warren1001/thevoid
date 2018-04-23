@@ -1,12 +1,14 @@
-package com.kabryxis.thevoid.round.wip;
+package com.kabryxis.thevoid.round;
 
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
 import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.thevoid.api.arena.schematic.ISchematic;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.VoidRound;
-import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.round.utility.HangingSheepWork;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -20,13 +22,13 @@ import java.io.File;
 
 public class HangingSheep extends VoidRound {
 	
-	private final Schematic fenceSchematic;
+	private final ISchematic fenceSchematic;
 	
 	public HangingSheep() {
 		super("hangingsheep", 0);
 		inventory[0] = new ItemBuilder(Material.DIAMOND_SWORD).name(ChatColor.GOLD + "Kill the Sheep!").build();
-		fenceSchematic = new Schematic(new File("plugins" + File.separator + "TheVoid" + File.separator + "test.sch"));
-		fenceSchematic.addSchematicWork(HangingSheepWork.class);
+		fenceSchematic = new VoidSchematic(new File("plugins" + File.separator + "TheVoid" + File.separator + "test.sch"));
+		fenceSchematic.addSchematicWork(HangingSheepWork::new);
 	}
 	
 	@Override
@@ -37,12 +39,12 @@ public class HangingSheep extends VoidRound {
 	@Override
 	public void start(Game game, Arena arena) {
 		World world = arena.getWorld();
-		BukkitThreads.sync(() -> arena.getSchematicData(fenceSchematic).getExtraWork(HangingSheepWork.class).getFenceBlocks().forEach(block -> {
+		BukkitThreads.sync(() -> arena.getArenaData(fenceSchematic).getSchematicWork(HangingSheepWork.class).getFenceBlocks().forEach(block -> {
 			for(int i = 0; i < 3; i++) {
 				Sheep sheep = world.spawn(block.getLocation().subtract(0, 1.5, 0), Sheep.class);
 				LeashHitch lh = world.spawn(block.getLocation(), LeashHitch.class);
-				arena.spawnedCustomEntity(lh);
-				arena.spawnedCustomEntity(sheep);
+				arena.spawnedEntity(lh);
+				arena.spawnedEntity(sheep);
 				sheep.setLeashHolder(lh);
 			}
 		}));
@@ -60,7 +62,7 @@ public class HangingSheep extends VoidRound {
 	}
 	
 	@Override
-	public void fell(Game game, Gamer gamer) {
+	public void kill(Gamer gamer) {
 		gamer.kill();
 		gamer.teleport(20);
 	}

@@ -1,4 +1,4 @@
-package com.kabryxis.thevoid.round.wip;
+package com.kabryxis.thevoid.round;
 
 import com.kabryxis.kabutils.cache.Cache;
 import com.kabryxis.kabutils.random.Randoms;
@@ -6,10 +6,10 @@ import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.concurrent.DelayedActionThread;
 import com.kabryxis.kabutils.spigot.entity.DelayedEntityRemover;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.ArenaWalkable;
+import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.VoidRound;
+import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -40,14 +40,14 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	private BukkitTask task = null;
 	
 	public Anvilstorm() {
-		super("anvilstorm", 1);
+		super("anvilstorm");
 	}
 	
 	@Override
 	public void start(Game game, Arena arena) {
 		if(!sandRemover.isRunning()) sandRemover.start();
 		else sandRemover.unpause();
-		locs = arena.getCurrentSchematicData().getDataObject(ArenaWalkable.class).getWalkableLocations();
+		locs = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		task = BukkitThreads.syncTimer(new BukkitRunnable() {
 			
 			@SuppressWarnings("deprecation")
@@ -56,7 +56,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 				for(int i = 0; i < 3 && !locs.isEmpty(); i++) {
 					FallingBlock fb = arena.getWorld().spawnFallingBlock(Randoms.getRandomAndRemove(locs).clone().add(0, 40 + rand.nextInt(10) - 5, 0), Material.ANVIL, (byte)0);
 					fb.setVelocity(velocity);
-					arena.spawnedCustomEntity(fb);
+					arena.spawnedEntity(fb);
 				}
 				if(locs.isEmpty()) cancel();
 			}
@@ -76,7 +76,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	public void event(Game game, Event eve) {
 		if(eve instanceof EntityChangeBlockEvent) {
 			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
-			if(event.getEntityType() == EntityType.FALLING_BLOCK) event.getBlock().getRelative(BlockFace.DOWN).breakNaturally(air);
+			if(event.getEntityType() == EntityType.FALLING_BLOCK) BukkitThreads.syncLater(() -> event.getBlock().getRelative(BlockFace.DOWN).breakNaturally(air), 1L);
 			else if(event.getBlock().getType() == Material.ANVIL) {
 				DelayedEntityRemover remover = Cache.get(DelayedEntityRemover.class);
 				remover.reuse(event.getEntity(), System.currentTimeMillis() + 500L);
@@ -100,6 +100,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 		config.set("round-length", 45);
 		config.set("world-names", Collections.singletonList("world"));
 		config.set("schematics", Collections.singletonList("rainbow"));
+		config.set("weight", VoidRound.DEFAULT_weight);
 	}
 	
 }

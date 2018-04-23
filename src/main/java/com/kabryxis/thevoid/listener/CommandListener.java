@@ -6,9 +6,10 @@ import com.kabryxis.kabutils.command.Com;
 import com.kabryxis.kabutils.spigot.command.BukkitCommandIssuer;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.arena.ArenaEntry;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidBaseSchematic;
+import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.schematic.BaseSchematic;
-import com.kabryxis.thevoid.api.schematic.Schematic;
+import com.kabryxis.thevoid.game.GameCommandIssuer;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -35,12 +36,11 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"buildmode"})
-	public boolean onBuildMode(BukkitCommandIssuer issuer, String alias, String[] args) {
+	public boolean onBuildMode(GameCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Player player = issuer.getPlayer();
-			player.setGameMode(player.getGameMode() == GameMode.CREATIVE ? GameMode.SURVIVAL : GameMode.CREATIVE);
-			Gamer gamer = Gamer.getGamer(player);
+			Gamer gamer = issuer.getGamer();
+			gamer.setGameMode(gamer.isInBuilderMode() ? GameMode.SURVIVAL : GameMode.CREATIVE);
 			gamer.setBuilderMode(!gamer.isInBuilderMode());
 			return true;
 		}
@@ -48,14 +48,14 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"sch"})
-	public boolean onSch(BukkitCommandIssuer issuer, String alias, String[] args) {
+	public boolean onSch(GameCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		if(args.length == 2) {
-			new Schematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Boolean.parseBoolean(args[1]));
+		if(args.length == 5) {
+			new VoidSchematic(args[0], issuer.getGamer().getSelection(), Boolean.parseBoolean(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
 			return true;
 		}
 		else if(args.length == 7) {
-			new BaseSchematic(args[0], Gamer.getGamer(issuer.getPlayer()).getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]),
+			new VoidBaseSchematic(args[0], issuer.getGamer().getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]),
 					Double.parseDouble(args[4]), Integer.parseInt(args[1]), Integer.parseInt(args[6]), Boolean.parseBoolean(args[5]));
 			return true;
 		}
@@ -194,11 +194,11 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"tpcenter"})
-	public boolean onTpCenter(BukkitCommandIssuer issuer, String alias, String[] args) {
+	public boolean onTpCenter(GameCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
-			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentSchematicData().getCenter());
+			Gamer gamer = issuer.getGamer();
+			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getLocation());
 			return true;
 		}
 		return false;

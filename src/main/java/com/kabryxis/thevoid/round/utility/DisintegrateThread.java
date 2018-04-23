@@ -1,4 +1,4 @@
-package com.kabryxis.thevoid.round.disintegrate;
+package com.kabryxis.thevoid.round.utility;
 
 import com.kabryxis.kabutils.concurrent.Threads;
 import com.kabryxis.kabutils.concurrent.thread.PausableThread;
