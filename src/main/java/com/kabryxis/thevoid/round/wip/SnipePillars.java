@@ -53,7 +53,7 @@ public class SnipePillars extends VoidRound {
 			Projectile proj = event.getEntity();
 			if(proj instanceof Arrow) {
 				Arrow arrow = (Arrow)proj;
-				BukkitThreads.sync(() -> { // TODO might need a 1 tick delay
+				BukkitThreads.sync(() -> {
 					WrappedEntityArrow<?> entityArrow = WrappableCache.get(WrappedEntityArrow.class);
 					entityArrow.set(arrow);
 					Block blockHit = entityArrow.getHitBlock();
