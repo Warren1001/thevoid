@@ -9,7 +9,7 @@ import com.kabryxis.kabutils.spigot.world.ChunkLoader;
 import com.kabryxis.kabutils.time.CountdownManager;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.IArenaDataObjectRegistry;
+import com.kabryxis.thevoid.api.arena.object.ArenaDataObjectRegistry;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.Round;
@@ -39,12 +39,12 @@ public class VoidGame implements Game {
 	
 	private final TheVoid plugin;
 	private final RoundInfoRegistry infoRegistry;
-	private final IArenaDataObjectRegistry objectRegistry;
+	private final ArenaDataObjectRegistry objectRegistry;
 	
 	private Location spawn;
 	private Set<Gamer> aliveGamers = ConcurrentHashMap.newKeySet();
 	
-	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, IArenaDataObjectRegistry objectRegistry) {
+	public VoidGame(TheVoid plugin, RoundInfoRegistry infoRegistry, ArenaDataObjectRegistry objectRegistry) {
 		this.plugin = plugin;
 		this.infoRegistry = infoRegistry;
 		this.objectRegistry = objectRegistry;
@@ -111,13 +111,13 @@ public class VoidGame implements Game {
 		RoundInfo info = getCurrentRoundInfo();
 		Round round = info.getRound();
 		Arena arena = info.getArena();
-		Location[] spawns = round.getSpawns(this, arena.getCurrentArenaData().getRadius());
+		round.start(this, arena);
+		Location[] spawns = round.getSpawns(this);
 		BukkitThreads.sync(() -> {
 			for(int i = 0; i < spawns.length; i++) {
 				gamers.get(i).nextRound(round, spawns[i]);
 			}
 		});
-		round.start(this, arena);
 		if(infos.hasNext()) infos.getNext().load(this);
 	}
 	
@@ -238,7 +238,7 @@ public class VoidGame implements Game {
 		// TODO
 	}
 	
-	public IArenaDataObjectRegistry getRegistry() {
+	public ArenaDataObjectRegistry getRegistry() {
 		return objectRegistry;
 	}
 	

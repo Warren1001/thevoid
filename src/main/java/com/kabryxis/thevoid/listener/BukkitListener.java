@@ -2,6 +2,7 @@ package com.kabryxis.thevoid.listener;
 
 import com.kabryxis.kabutils.spigot.event.GlobalListener;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
+import com.kabryxis.kabutils.spigot.metadata.Metadata;
 import com.kabryxis.kabutils.spigot.world.ChunkLoader;
 import com.kabryxis.thevoid.api.game.Gamer;
 import com.kabryxis.thevoid.api.round.RoundInfo;
@@ -125,6 +126,12 @@ public class BukkitListener implements GlobalListener {
 					}
 					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK || pie.getAction() == Action.RIGHT_CLICK_AIR) {
 						pieGamer.getSelection().removeSelection();
+						pie.setCancelled(true);
+					}
+				}
+				else if(Items.isType(pieGamer.getInventory().getItemInHand(), Material.GOLD_SWORD)) {
+					if(pie.getAction() == Action.LEFT_CLICK_BLOCK) {
+						pie.getClickedBlock().setMetadata("walkable", Metadata.getEmptyMetadataValue());
 						pie.setCancelled(true);
 					}
 				}

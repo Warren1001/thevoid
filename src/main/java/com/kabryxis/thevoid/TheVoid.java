@@ -10,6 +10,8 @@ import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.arena.object.impl.VoidArenaDataObjectRegistry;
 import com.kabryxis.thevoid.api.arena.schematic.impl.VoidBaseSchematic;
 import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
+import com.kabryxis.thevoid.api.arena.schematic.util.CreatorWalkable;
+import com.kabryxis.thevoid.api.arena.schematic.util.SchematicCreator;
 import com.kabryxis.thevoid.api.game.VoidGameGenerator;
 import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
 import com.kabryxis.thevoid.game.GameThread;
@@ -17,7 +19,7 @@ import com.kabryxis.thevoid.game.VoidGame;
 import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
 import com.kabryxis.thevoid.listener.BukkitListener;
 import com.kabryxis.thevoid.listener.CommandListener;
-import com.kabryxis.thevoid.round.HotPotato;
+import com.kabryxis.thevoid.round.wip.SnipePillars;
 import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -42,11 +44,12 @@ public class TheVoid extends JavaPlugin {
 		commandManager.addExtraWork(new CommandMapHook(commandManager));
 		commandManager.registerListener(new CommandListener(this));
 		//framework.registerCommands(new UtilityListener(this));
+		SchematicCreator.registerExtraWork("walkable", new CreatorWalkable());
 		VoidArenaDataObjectRegistry objectRegistry = new VoidArenaDataObjectRegistry();
 		objectRegistry.register("walkable", ArenaWalkable.class, ArenaWalkable::new);
 		RoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry();
-		infoRegistry.registerRounds(new HotPotato()/*new KnockbackDisintegrateHybrid(), new HangingSheep(), new DisintegrateRandom(), new DisintegrateWalk(), new Spleef()/*, new DragonSpleef()/*, new
-		Knockback(), new LightningDodge(), new Anvilstorm()*/);
+		infoRegistry.registerRounds(new SnipePillars()/*, new HangingSheep(), new KnockbackDisintegrateHybrid(), new HotPotato(),
+			new DisintegrateRandom(), new DisintegrateWalk(), new Spleef(), new DragonSpleef(), new Knockback(), new LightningDodge(), new Anvilstorm()*/);
 		for(File file : new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml"))) {
 			Config.get(file).load(config -> infoRegistry.registerArena(new VoidArena(objectRegistry, config)));
 		}

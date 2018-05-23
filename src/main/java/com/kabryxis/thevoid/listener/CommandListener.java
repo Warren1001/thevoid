@@ -6,10 +6,8 @@ import com.kabryxis.kabutils.command.Com;
 import com.kabryxis.kabutils.spigot.command.BukkitCommandIssuer;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.arena.ArenaEntry;
-import com.kabryxis.thevoid.api.arena.schematic.impl.VoidBaseSchematic;
-import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
+import com.kabryxis.thevoid.api.arena.schematic.util.SchematicCreator;
 import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.game.GameCommandIssuer;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -26,6 +24,80 @@ public class CommandListener {
 		this.plugin = plugin;
 	}
 	
+	@Com(aliases = {"creator"})
+	public boolean onCreator(BukkitCommandIssuer issuer, String alias, String[] args) {
+		if(!issuer.isPlayer()) return false;
+		Gamer gamer = Gamer.getGamer(issuer.getPlayer());
+		SchematicCreator creator = gamer.getCreator();
+		if(args.length == 1) {
+			if(args[0].equalsIgnoreCase("reset")) {
+				creator.reset();
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("center")) {
+				Location loc = gamer.getWorldLocation();
+				creator.center(loc.getX(), loc.getY(), loc.getZ());
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("create")) {
+				if(creator.useData()) creator.createBase();
+				else creator.createNormal(true);
+				return true;
+			}
+		}
+		else if(args.length == 4) {
+			if(args[0].equalsIgnoreCase("center")) {
+				creator.center(Double.parseDouble(args[1]), Double.parseDouble(args[2]), Double.parseDouble(args[3]));
+				return true;
+			}
+		}
+		else if(args.length == 2) {
+			if(args[0].equalsIgnoreCase("name")) {
+				creator.name(args[1]);
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("extra")) {
+				creator.useExtraWork(args[1]);
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("radius")) {
+				creator.radius(Double.parseDouble(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("weight")) {
+				creator.weight(Integer.parseInt(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("air")) {
+				creator.includeAir(Boolean.parseBoolean(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("usedata")) {
+				creator.useData(Boolean.parseBoolean(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("odd")) {
+				creator.odd(Boolean.parseBoolean(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("time")) {
+				creator.timeModifier(Double.parseDouble(args[1]));
+				return true;
+			}
+			else if(args[0].equalsIgnoreCase("create")) {
+				if(args[1].equalsIgnoreCase("base")) {
+					creator.createBase();
+					return true;
+				}
+				else if(args[1].equalsIgnoreCase("normal")) {
+					creator.createNormal(true);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	@Com(aliases = {"start"})
 	public boolean onStart(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(args.length == 1) {
@@ -36,27 +108,12 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"buildmode"})
-	public boolean onBuildMode(GameCommandIssuer issuer, String alias, String[] args) {
+	public boolean onBuildMode(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Gamer gamer = issuer.getGamer();
+			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
 			gamer.setGameMode(gamer.isInBuilderMode() ? GameMode.SURVIVAL : GameMode.CREATIVE);
 			gamer.setBuilderMode(!gamer.isInBuilderMode());
-			return true;
-		}
-		return false;
-	}
-	
-	@Com(aliases = {"sch"})
-	public boolean onSch(GameCommandIssuer issuer, String alias, String[] args) {
-		if(!issuer.isPlayer()) return false;
-		if(args.length == 5) {
-			new VoidSchematic(args[0], issuer.getGamer().getSelection(), Boolean.parseBoolean(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-			return true;
-		}
-		else if(args.length == 7) {
-			new VoidBaseSchematic(args[0], issuer.getGamer().getSelection(), Double.parseDouble(args[2]), Double.parseDouble(args[3]),
-					Double.parseDouble(args[4]), Integer.parseInt(args[1]), Integer.parseInt(args[6]), Boolean.parseBoolean(args[5]));
 			return true;
 		}
 		return false;
@@ -82,13 +139,23 @@ public class CommandListener {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 4) {
 			String worldName = args[0];
+			World world = Bukkit.getWorld(worldName);
+			if(world == null) world = new WorldCreator(worldName).createWorld();
 			int x = Integer.parseInt(args[1]);
 			int y = Integer.parseInt(args[2]);
 			int z = Integer.parseInt(args[3]);
-			issuer.getPlayer().teleport(new Location(Bukkit.getWorld(worldName), x, y, z));
+			issuer.getPlayer().teleport(new Location(world, x, y, z));
 			return true;
 		}
 		return false;
+	}
+	
+	@Com(aliases = {"worldspawn"})
+	public boolean onWorldSpawn(BukkitCommandIssuer issuer, String alias, String[] args) {
+		if(!issuer.isPlayer() || args.length != 0) return false;
+		Player player = issuer.getPlayer();
+		player.teleport(player.getWorld().getSpawnLocation());
+		return true;
 	}
 	
 	private BukkitTask task;
@@ -105,6 +172,7 @@ public class CommandListener {
 		}
 		else if(args.length == 2) {
 			if(args[0].equalsIgnoreCase("start")) {
+				if(task != null) task.cancel();
 				int i = Integer.parseInt(args[1]);
 				task = new BukkitRunnable() {
 					
@@ -194,11 +262,11 @@ public class CommandListener {
 	}
 	
 	@Com(aliases = {"tpcenter"})
-	public boolean onTpCenter(GameCommandIssuer issuer, String alias, String[] args) {
+	public boolean onTpCenter(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Gamer gamer = issuer.getGamer();
-			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getLocation());
+			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
+			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter());
 			return true;
 		}
 		return false;
