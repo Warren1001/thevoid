@@ -79,4 +79,5 @@ public class SnipePillars extends VoidRound {
 		config.set("pillar-height", 10);
 		config.set("radius", 10);
 	}
+
 }

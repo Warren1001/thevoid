@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 public class VoidGame implements Game {
 	
 	private final String name = "thevoid-game";
-	private final Logger logger = Logger.getLogger(name);
 	private final List<Gamer> gamers = new ArrayList<>();
 	private final DataQueue<RoundInfo> infos = new DataQueue<>();
 	private final WrappedPacketPlayOutChat<?> actionMessage = WrappableCache.get(WrappedPacketPlayOutChat.class);
@@ -75,11 +74,6 @@ public class VoidGame implements Game {
 	@Override
 	public Plugin getOwner() {
 		return plugin;
-	}
-	
-	@Override
-	public Logger getLogger() {
-		return logger;
 	}
 	
 	@Override
@@ -214,7 +208,7 @@ public class VoidGame implements Game {
 	}
 	
 	@Override
-	public Collection<Gamer> getGamers() {
+	public List<Gamer> getGamers() {
 		return gamers;
 	}
 	

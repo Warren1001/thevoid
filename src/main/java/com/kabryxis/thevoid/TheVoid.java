@@ -47,11 +47,11 @@ public class TheVoid extends JavaPlugin {
 		SchematicCreator.registerExtraWork("walkable", new CreatorWalkable());
 		VoidArenaDataObjectRegistry objectRegistry = new VoidArenaDataObjectRegistry();
 		objectRegistry.register("walkable", ArenaWalkable.class, ArenaWalkable::new);
-		RoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry();
+		RoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry(this);
 		infoRegistry.registerRounds(new SnipePillars()/*, new HangingSheep(), new KnockbackDisintegrateHybrid(), new HotPotato(),
 			new DisintegrateRandom(), new DisintegrateWalk(), new Spleef(), new DragonSpleef(), new Knockback(), new LightningDodge(), new Anvilstorm()*/);
 		for(File file : new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml"))) {
-			Config.get(file).load(config -> infoRegistry.registerArena(new VoidArena(objectRegistry, config)));
+			new Config(file).load(config -> infoRegistry.registerArena(new VoidArena(objectRegistry, config)));
 		}
 		for(File file : new File(VoidSchematic.PATH).listFiles(new FileEndingFilter(".sch"))) {
 			infoRegistry.registerSchematic(new VoidBaseSchematic(file));
