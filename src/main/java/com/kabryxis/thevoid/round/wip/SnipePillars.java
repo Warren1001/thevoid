@@ -9,6 +9,7 @@ import com.kabryxis.kabutils.spigot.world.Teleport;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.schematic.BaseArenaData;
 import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.GamePlayer;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
 import com.kabryxis.thevoid.api.round.RoundManager;
@@ -33,9 +34,15 @@ public class SnipePillars extends SurvivalRound {
 	private final ItemStack[] items = new ItemStack[36];
 	
 	public SnipePillars(RoundManager<BasicRound> roundManager) {
-		super(roundManager, "snipepillars", false);
+		super(roundManager, "snipepillars", true);
 		items[0] = new ItemBuilder(Material.BOW).name(ChatColor.GOLD + "Shoot the pillars!").enchant(Enchantment.ARROW_INFINITE, 1).build();
-		items[1] = new ItemBuilder(Material.ARROW).build();
+		items[17] = new ItemBuilder(Material.ARROW).build();
+	}
+	
+	@Override
+	public void setup(GamePlayer gamePlayer) {
+		super.setup(gamePlayer);
+		gamePlayer.getInventory().setContents(items);
 	}
 	
 	@Override
@@ -61,7 +68,7 @@ public class SnipePillars extends SurvivalRound {
 				BukkitThreads.sync(() -> {
 					Block blockHit = WrappedEntityArrow.newInstance(arrow).getHitBlock();
 					if(blockHit != null) blockHit.setType(Material.AIR);
-					else System.out.println("ProjectileHitEvent was called but no block was hit.");
+					//else System.out.println("ProjectileHitEvent was called but no block was hit.");
 					arrow.remove();
 				});
 			}

@@ -27,6 +27,7 @@ public class VoidRoundInfoRegistry implements RoundInfoRegistry<Arena, BaseSchem
 	public VoidRoundInfoRegistry(Plugin owner) {
 		this.owner = owner;
 		this.roundManager = new VoidRoundManager(owner);
+		roundManager.addGlobalRequiredDefault("enabled", true);
 		roundManager.addGlobalRequiredDefault("round-length", 30);
 		roundManager.addGlobalRequiredDefault("weight", 100);
 		roundManager.addGlobalRequiredDefault("worlds", Arrays.asList("void_overworld", "void_nether", "void_end"));

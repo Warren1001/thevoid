@@ -60,14 +60,7 @@ public class VoidRoundManager implements RoundManager<BasicRound> {
 		Config data;
 		if(!file.exists()) {
 			InputStream is = owner.getResource(roundFileName);
-			if(is == null) {
-				data = new Config(file);
-				data.addDefaults(globalDefaults);
-				round.setCustomDefaults(data);
-				data.options().copyDefaults(true);
-				data.save();
-			}
-			else data = new Config(file, is);
+			data = is == null ? new Config(file) : new Config(file, is);
 			checkData(round, data);
 		}
 		else {
@@ -78,28 +71,25 @@ public class VoidRoundManager implements RoundManager<BasicRound> {
 	}
 	
 	protected void checkData(BasicRound round, Config data) {
+		data.addDefaults(globalDefaults);
+		round.setCustomDefaults(data);
+		data.options().copyDefaults(true);
 		String roundName = round.getName();
-		Map<String, Class<?>> requiredObjects = round.getRequiredObjects();
-		if(globalRequiredObjects.size() + requiredObjects.size() > 0) {
+		Map<String, Class<?>> combinedObjects = new HashMap<>();
+		combinedObjects.putAll(globalRequiredObjects);
+		combinedObjects.putAll(round.getRequiredObjects());
+		for(Iterator<Map.Entry<String, Class<?>>> iterator = combinedObjects.entrySet().iterator(); iterator.hasNext();) {
+			Map.Entry<String, Class<?>> entry = iterator.next();
+			String key = entry.getKey();
+			if(data.isSet(key) && entry.getValue().isInstance(data.get(key))) iterator.remove();
+		}
+		if(combinedObjects.size() > 0) {
 			owner.getLogger().warning("Disabling Round '" + roundName + "' because it does not have the required non-default entries that follow:");
 			StringBuilder builder = new StringBuilder("Entries: [(template)entryName, objectType], ");
-			for(Iterator<Map.Entry<String, Class<?>>> iterator = globalRequiredObjects.entrySet().iterator(); iterator.hasNext();) {
-				Map.Entry<String, Class<?>> globalRequiredObject = iterator.next();
-				String key = globalRequiredObject.getKey();
-				String objectTypeName = globalRequiredObject.getValue().getSimpleName();
-				builder.append("[");
-				builder.append(key);
-				builder.append(", ");
-				builder.append(objectTypeName);
-				builder.append("]");
-				if(iterator.hasNext()) builder.append(", ");
-				data.set(key, "CHANGE ME TO A " + objectTypeName);
-			}
-			if(requiredObjects.size() > 0 && globalRequiredObjects.size() > 0) builder.append(", ");
-			for(Iterator<Map.Entry<String, Class<?>>> iterator = requiredObjects.entrySet().iterator(); iterator.hasNext();) {
-				Map.Entry<String, Class<?>> requiredObject = iterator.next();
-				String key = requiredObject.getKey();
-				String objectTypeName = requiredObject.getValue().getSimpleName();
+			for(Iterator<Map.Entry<String, Class<?>>> iterator = combinedObjects.entrySet().iterator(); iterator.hasNext();) {
+				Map.Entry<String, Class<?>> entry = iterator.next();
+				String key = entry.getKey();
+				String objectTypeName = entry.getValue().getSimpleName();
 				builder.append("[");
 				builder.append(key);
 				builder.append(", ");
@@ -112,6 +102,7 @@ public class VoidRoundManager implements RoundManager<BasicRound> {
 			owner.getLogger().warning("Check the Round '" + roundName + "''s data file at " + data.getFile().getPath() + " and configure the values necessary.");
 			round.setEnabled(false);
 		}
+		data.save();
 	}
 	
 }

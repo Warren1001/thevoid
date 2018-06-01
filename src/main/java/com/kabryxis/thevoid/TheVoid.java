@@ -4,7 +4,6 @@ import com.kabryxis.kabutils.command.CommandManager;
 import com.kabryxis.kabutils.data.file.FileEndingFilter;
 import com.kabryxis.kabutils.spigot.command.CommandMapHook;
 import com.kabryxis.kabutils.spigot.data.Config;
-import com.kabryxis.kabutils.spigot.event.GlobalListener;
 import com.kabryxis.kabutils.spigot.event.Listeners;
 import com.kabryxis.kabutils.spigot.world.ChunkLoader;
 import com.kabryxis.thevoid.api.impl.arena.VoidArena;
@@ -18,12 +17,11 @@ import com.kabryxis.thevoid.api.util.arena.schematic.CreatorWalkable;
 import com.kabryxis.thevoid.api.util.game.VoidGameGenerator;
 import com.kabryxis.thevoid.game.GameThread;
 import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
-import com.kabryxis.thevoid.listener.GameListener;
 import com.kabryxis.thevoid.listener.CommandListener;
+import com.kabryxis.thevoid.listener.GameListener;
+import com.kabryxis.thevoid.listener.VoidListener;
 import com.kabryxis.thevoid.round.wip.SnipePillars;
 import org.bukkit.*;
-import org.bukkit.event.Event;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -34,6 +32,8 @@ public class TheVoid extends JavaPlugin {
 	private VoidGame game;
 	private GameThread thread;
 	
+	private Location spawn;
+	
 	private boolean shouldRun = true;
 	
 	@Override
@@ -42,8 +42,8 @@ public class TheVoid extends JavaPlugin {
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		TheVoid plugin = this;
 		setupWorlds();
+		spawn = new Location(Bukkit.getWorld("lobby"), 0.5, 101.5, 0.5);
 		commandManager = new CommandManager();
 		commandManager.addExtraWork(new CommandMapHook(commandManager));
 		commandManager.registerListener(new CommandListener(this));
@@ -51,9 +51,9 @@ public class TheVoid extends JavaPlugin {
 		VoidSchematicCreator.registerExtraWork("walkable", new CreatorWalkable());
 		VoidArenaDataObjectRegistry objectRegistry = new VoidArenaDataObjectRegistry();
 		objectRegistry.register("walkable", ArenaWalkable.class, ArenaWalkable::new);
-		VoidRoundManager roundManager = new VoidRoundManager(this);
 		ChunkLoader chunkLoader = new ChunkLoader(this);
 		VoidRoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry(this);
+		VoidRoundManager roundManager = infoRegistry.getRoundManager();
 		infoRegistry.registerRounds(new SnipePillars(roundManager)/*, new HangingSheep(), new KnockbackDisintegrateHybrid(), new HotPotato(),
 			new DisintegrateRandom(), new DisintegrateWalk(), new Spleef(), new DragonSpleef(), new Knockback(), new LightningDodge(), new Anvilstorm()*/);
 		for(File file : new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml"))) {
@@ -62,24 +62,11 @@ public class TheVoid extends JavaPlugin {
 		for(File file : new File(VoidSchematic.PATH).listFiles(new FileEndingFilter(".sch"))) {
 			infoRegistry.registerSchematic(new VoidBaseSchematic(file));
 		}
-		//infoRegistry.registerSchematic(BaseSchematic.EMPTY);
 		game = new VoidGame(this, chunkLoader, infoRegistry, objectRegistry);
-		game.setSpawn(new Location(Bukkit.getWorld("lobby"), 0.5, 101.5, 0.5));
+		game.registerEventHandler(new GameListener(this, game));
+		game.setSpawn(spawn);
 		thread = new GameThread("TheVoid - Game thread", game);
-		game.registerEventHandler(new GameListener(game));
-		Listeners.registerListener(new GlobalListener() {
-			
-			@Override
-			public void onEvent(Event event) {
-				game.callEvent(event);
-			}
-			
-			@Override
-			public Plugin getPlugin() {
-				return plugin;
-			}
-			
-		});
+		Listeners.registerListener(new VoidListener(game, this));
 	}
 	
 	public void shouldRun(boolean shouldRun) {
@@ -96,6 +83,10 @@ public class TheVoid extends JavaPlugin {
 	
 	public VoidGame getGame() {
 		return game;
+	}
+	
+	public Location getSpawn() {
+		return spawn;
 	}
 	
 	public void start(int rounds) {

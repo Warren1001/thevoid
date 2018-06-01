@@ -2,6 +2,7 @@ package com.kabryxis.thevoid.listener;
 
 import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
 import com.kabryxis.kabutils.spigot.metadata.Metadata;
+import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.GamePlayer;
 import com.kabryxis.thevoid.api.game.PlayerManager;
@@ -30,12 +31,14 @@ import java.util.Map;
 
 public class GameListener implements GameEventHandler {
 	
+	private final TheVoid plugin;
 	private final Game game;
 	private final PlayerManager playerManager;
 	
 	private final Map<GamePlayer, Long> pmeTimestamps = new HashMap<>();
 	
-	public GameListener(Game game) {
+	public GameListener(TheVoid plugin, Game game) {
+		this.plugin = plugin;
 		this.game = game;
 		this.playerManager = game.getPlayerManager();
 	}
@@ -48,6 +51,8 @@ public class GameListener implements GameEventHandler {
 		case "PlayerJoinEvent":
 			PlayerJoinEvent pje = (PlayerJoinEvent)event;
 			GamePlayer pjePlayer = playerManager.getPlayer(pje.getPlayer());
+			playerManager.addActivePlayer(pjePlayer);
+			pjePlayer.teleport(plugin.getSpawn());
 			// TODO perhaps some initialization / data loading
 			break;
 		case "PlayerQuitEvent":
