@@ -1,28 +1,27 @@
 package com.kabryxis.thevoid.round;
 
-import com.kabryxis.kabutils.cache.Cache;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
+import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundManager;
 import com.kabryxis.thevoid.round.utility.HotPotatoItem;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
-public class HotPotato extends VoidRound {
+public class HotPotato extends SurvivalRound {
 	
-	private HotPotatoItem potatoItem = Cache.get(HotPotatoItem.class);
+	private HotPotatoItem potatoItem = new HotPotatoItem();
 	
-	public HotPotato() {
-		super("hotpotato");
+	public HotPotato(RoundManager<BasicRound> roundManager) {
+		super(roundManager, "hotpotato", false);
 	}
 	
 	@Override
-	public void start(Game game, Arena arena) {
-		BukkitThreads.sync(() -> potatoItem.start(game.getAliveGamers()));
+	public void start(Game game) {
+		BukkitThreads.sync(() -> potatoItem.start(game.getPlayerManager().getAlivePlayers()));
 	}
 	
 	@Override
@@ -32,13 +31,13 @@ public class HotPotato extends VoidRound {
 			Entity clickedEntity = event.getEntity(), damagingEntity = event.getDamager();
 			if(clickedEntity instanceof Player && damagingEntity instanceof Player) {
 				Player clicked = (Player)clickedEntity, attacker = (Player)damagingEntity;
-				if(potatoItem.isCurrentHolder(attacker)) potatoItem.changeHolder(Gamer.getGamer(clicked));
+				if(potatoItem.isCurrentHolder(attacker)) potatoItem.changeHolder(game.getPlayerManager().getPlayer(clicked));
 			}
 		}
 	}
 	
 	@Override
-	public void end(Game game, Arena arena) {
+	public void end(Game game) {
 		potatoItem.stop();
 	}
 	

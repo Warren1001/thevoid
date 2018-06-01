@@ -49,7 +49,7 @@ public class VoidRoundInfo implements RoundInfo {
 	public void load(Game game) {
 		arena.nextSchematic();
 		arena.loadSchematic();
-		round.load(game, arena);
+		round.load(game);
 	}
 	
 }

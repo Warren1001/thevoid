@@ -1,8 +1,10 @@
 package com.kabryxis.thevoid.round.wip;
 
-import com.kabryxis.thevoid.api.arena.Arena;
+import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
+import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -12,24 +14,17 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 
 import java.util.Collections;
 
-public class PetDragons extends VoidRound {
+public class PetDragons extends SurvivalRound {
 	
 	//private final Map<Gamer, PetDragon> dragons = new HashMap<>();
 	
-	public PetDragons() {
-		super("petdragons");
+	public PetDragons(RoundManager<BasicRound> roundManager) {
+		super(roundManager, "petdragons", false);
 	}
 	
 	@Override
-	public void generateDefaults() {
-		config.set("round-length", 60);
-		config.set("world-names", Collections.singletonList("world_the_end"));
-		config.set("schematics", Collections.singletonList("theend"));
-	}
-	
-	@Override
-	public void start(Game game, Arena arena) {
-		Location center = arena.getLocation();
+	public void start(Game game) {
+		Location center = game.getCurrentRoundInfo().getArena().getLocation();
 		/*BukkitThreads.sync(new Runnable() {
 			
 			@Override
@@ -42,7 +37,6 @@ public class PetDragons extends VoidRound {
 			}
 			
 		});*/
-		
 	}
 	
 	@Override
@@ -63,6 +57,12 @@ public class PetDragons extends VoidRound {
 				setTarget(player, attacked);
 			}
 		}
+	}
+	
+	@Override
+	public void setCustomDefaults(Config data) {
+		data.addDefault("round-length", 60);
+		data.addDefault("schematics", Collections.singletonList("theend"));
 	}
 	
 	private void setTarget(Player owner, Player target) {

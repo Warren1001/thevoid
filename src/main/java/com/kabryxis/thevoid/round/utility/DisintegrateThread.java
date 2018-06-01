@@ -9,14 +9,11 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.metadata.MetadataValue;
 
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DisintegrateThread extends PausableThread {
 	
-	private final Queue<DisintegrateBlock> cache = new ConcurrentLinkedQueue<>();
 	private final Set<DisintegrateBlock> active = ConcurrentHashMap.newKeySet();
 	private final Runnable action = () -> active.removeIf(DisintegrateBlock::test);
 	
@@ -34,26 +31,17 @@ public class DisintegrateThread extends PausableThread {
 	
 	public void add(Block block) {
 		if(isRunning() && !isPaused() && block.getType() != Material.AIR && !block.hasMetadata(key)) {
-			DisintegrateBlock db = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
-			db.reuse(block);
-			active.add(db);
+			active.add(new DisintegrateBlock(block));
 			for(int i = 0; i < 50; i++) {
 				Block aboveBlock = block.getRelative(0, i, 0);
-				if(aboveBlock.getType() != Material.AIR && !aboveBlock.hasMetadata(key)) {
-					DisintegrateBlock aboveDb = cache.isEmpty() ? new DisintegrateBlock() : cache.poll();
-					aboveDb.reuse(aboveBlock);
-					active.add(aboveDb);
-				}
+				if(aboveBlock.getType() != Material.AIR && !aboveBlock.hasMetadata(key)) active.add(new DisintegrateBlock(aboveBlock));
 			}
 		}
 	}
 	
 	@Override
 	public void onPause() {
-		BukkitThreads.sync(() -> {
-			active.forEach(DisintegrateBlock::cache);
-			active.clear();
-		});
+		BukkitThreads.sync(active::clear);
 	}
 	
 	@Override
@@ -76,7 +64,7 @@ public class DisintegrateThread extends PausableThread {
 		private int index = 0;
 		private long last = 0L;
 		
-		public void reuse(Block block) {
+		public DisintegrateBlock(Block block) {
 			this.block = block;
 		}
 		
@@ -86,7 +74,7 @@ public class DisintegrateThread extends PausableThread {
 			if(currentTime - last > interval) {
 				if(index == levels.length) {
 					block.breakNaturally();
-					cache();
+					block.removeMetadata(key, value.getOwningPlugin());
 					return true;
 				}
 				last = currentTime;
@@ -95,15 +83,6 @@ public class DisintegrateThread extends PausableThread {
 				index++;
 			}
 			return false;
-		}
-		
-		@Override
-		public void cache() {
-			block.removeMetadata(key, value.getOwningPlugin());
-			block = null;
-			index = 0;
-			last = 0L;
-			cache.add(this);
 		}
 		
 	}

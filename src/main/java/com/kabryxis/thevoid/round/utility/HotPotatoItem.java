@@ -4,7 +4,7 @@ import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.ItemBuilder;
 import com.kabryxis.kabutils.string.IncrementalString;
-import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.game.GamePlayer;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Collection;
+import java.util.List;
 
 public class HotPotatoItem implements Runnable {
 	
@@ -24,8 +24,8 @@ public class HotPotatoItem implements Runnable {
 	private long lastTick = 0L;
 	
 	private BukkitTask task;
-	private Collection<Gamer> gamers;
-	private Gamer currentHolder, previousHolder;
+	private List<? extends GamePlayer> players;
+	private GamePlayer currentHolder, previousHolder;
 	
 	@Override
 	public void run() {
@@ -43,9 +43,9 @@ public class HotPotatoItem implements Runnable {
 		}
 	}
 	
-	public void start(Collection<Gamer> gamers) {
-		this.gamers = gamers;
-		currentHolder = Randoms.getRandom(gamers);
+	public void start(List<? extends GamePlayer> players) {
+		this.players = players;
+		currentHolder = Randoms.getRandom(players);
 		currentHolder.getInventory().setItem(0, item);
 		lastTick = System.currentTimeMillis();
 		task = BukkitThreads.syncTimer(this, 10L, 1L);
@@ -60,7 +60,7 @@ public class HotPotatoItem implements Runnable {
 		return currentHolder.getPlayer() == player;
 	}
 	
-	public void changeHolder(Gamer newHolder) {
+	public void changeHolder(GamePlayer newHolder) {
 		//if(newHolder == previousHolder) return;
 		previousHolder = currentHolder;
 		currentHolder = newHolder;
@@ -74,22 +74,12 @@ public class HotPotatoItem implements Runnable {
 		Player player = currentHolder.getPlayer();
 		player.getWorld().playEffect(player.getLocation(), Effect.EXPLOSION_HUGE, 0);
 		player.getWorld().playSound(player.getLocation(), Sound.EXPLODE, 1F, 1F);
-		currentHolder.decrementRoundPoints(false);
 		boolean ending = currentHolder.kill();
-		currentHolder.teleport(20);
 		if(ending) {
 			stop();
 			return;
 		}
-		changeHolder(Randoms.getRandom(gamers));
-	}
-	
-	public void cache() {
-		is.reset();
-		task = null;
-		gamers = null;
-		currentHolder = null;
-		previousHolder = null;
+		changeHolder(Randoms.getRandom(players));
 	}
 	
 }

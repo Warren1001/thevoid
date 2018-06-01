@@ -1,15 +1,14 @@
 package com.kabryxis.thevoid.game;
 
 import com.kabryxis.kabutils.data.Lists;
-import com.kabryxis.kabutils.random.PredicateWeightedRandomArrayList;
+import com.kabryxis.kabutils.random.weighted.conditional.ConditionalWeightedRandomArrayList;
 import com.kabryxis.thevoid.VoidRoundManager;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.arena.schematic.BaseSchematic;
-import com.kabryxis.thevoid.api.arena.schematic.impl.VoidEmptySchematic;
-import com.kabryxis.thevoid.api.round.Round;
+import com.kabryxis.thevoid.api.impl.arena.schematic.VoidEmptySchematic;
+import com.kabryxis.thevoid.api.round.BasicRound;
 import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.api.round.RoundInfoRegistry;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Arrays;
@@ -17,10 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VoidRoundInfoRegistry implements RoundInfoRegistry<Arena, BaseSchematic, VoidRound> {
+public class VoidRoundInfoRegistry implements RoundInfoRegistry<Arena, BaseSchematic, BasicRound> {
 	
-	private final PredicateWeightedRandomArrayList<Arena> arenas = new PredicateWeightedRandomArrayList<>(2);
-	private final PredicateWeightedRandomArrayList<BaseSchematic> schematics = new PredicateWeightedRandomArrayList<>(2);
+	private final ConditionalWeightedRandomArrayList<Arena> arenas = new ConditionalWeightedRandomArrayList<>(2);
+	private final ConditionalWeightedRandomArrayList<BaseSchematic> schematics = new ConditionalWeightedRandomArrayList<>(2);
 	
 	private final Plugin owner;
 	private final VoidRoundManager roundManager;
@@ -50,7 +49,7 @@ public class VoidRoundInfoRegistry implements RoundInfoRegistry<Arena, BaseSchem
 	}
 	
 	@Override
-	public void registerRound(VoidRound round) {
+	public void registerRound(BasicRound round) {
 		roundManager.registerRound(round);
 	}
 	
@@ -58,7 +57,7 @@ public class VoidRoundInfoRegistry implements RoundInfoRegistry<Arena, BaseSchem
 	public void queueArenaData(List<RoundInfo> infos, int i) {
 		Map<Arena, List<BaseSchematic>> schems = new HashMap<>();
 		for(int amount = 0; amount < i; amount++) {
-			Round round = roundManager.getRandomRound();
+			BasicRound round = roundManager.getRandomRound();
 			Arena arena = arenas.random(round);
 			BaseSchematic schematic = schematics.random(round, arena);
 			schems.computeIfAbsent(arena, Lists.getGenericCreator()).add(schematic);

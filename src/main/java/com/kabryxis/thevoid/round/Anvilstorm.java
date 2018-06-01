@@ -1,15 +1,16 @@
 package com.kabryxis.thevoid.round;
 
-import com.kabryxis.kabutils.cache.Cache;
 import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.concurrent.DelayedActionThread;
+import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.kabutils.spigot.entity.DelayedEntityRemover;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
+import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundManager;
+import com.kabryxis.thevoid.api.util.arena.object.ArenaWalkable;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -29,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio tweaking
+public class Anvilstorm extends SurvivalRound { // TODO needs a bit of visual/audio tweaking
 	
 	private final Random rand = new Random();
 	private final ItemStack air = new ItemStack(Material.AIR);
@@ -39,18 +40,18 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	private List<Location> locs = null;
 	private BukkitTask task = null;
 	
-	public Anvilstorm() {
-		super("anvilstorm");
+	public Anvilstorm(RoundManager<BasicRound> roundManager) {
+		super(roundManager, "anvilstorm", false);
 	}
 	
 	@Override
-	public void start(Game game, Arena arena) {
+	public void start(Game game) {
 		if(!sandRemover.isRunning()) sandRemover.start();
 		else sandRemover.unpause();
+		Arena arena = game.getCurrentRoundInfo().getArena();
 		locs = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		task = BukkitThreads.syncTimer(new BukkitRunnable() {
 			
-			@SuppressWarnings("deprecation")
 			@Override
 			public void run() {
 				for(int i = 0; i < 3 && !locs.isEmpty(); i++) {
@@ -65,7 +66,7 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 	}
 	
 	@Override
-	public void end(Game game, Arena arena) {
+	public void end(Game game) {
 		task.cancel();
 		task = null;
 		locs = null;
@@ -77,30 +78,22 @@ public class Anvilstorm extends VoidRound { // TODO needs a bit of visual/audio 
 		if(eve instanceof EntityChangeBlockEvent) {
 			EntityChangeBlockEvent event = (EntityChangeBlockEvent)eve;
 			if(event.getEntityType() == EntityType.FALLING_BLOCK) BukkitThreads.syncLater(() -> event.getBlock().getRelative(BlockFace.DOWN).breakNaturally(air), 1L);
-			else if(event.getBlock().getType() == Material.ANVIL) {
-				DelayedEntityRemover remover = Cache.get(DelayedEntityRemover.class);
-				remover.reuse(event.getEntity(), System.currentTimeMillis() + 500L);
-				sandRemover.add(remover);
-			}
+			else if(event.getBlock().getType() == Material.ANVIL) sandRemover.add(new DelayedEntityRemover(event.getEntity(), System.currentTimeMillis() + 500L));
 		}
 		else if(eve instanceof EntityDamageEvent) { // TODO doesnt work??
 			System.out.println("1");
 			EntityDamageEvent event = (EntityDamageEvent)eve;
 			if(event.getCause() == DamageCause.FALLING_BLOCK) {
 				System.out.println("2");
-				Gamer gamer = Gamer.getGamer((Player)event.getEntity());
-				gamer.decrementRoundPoints(false);
-				gamer.kill();
+				game.getPlayerManager().getPlayer((Player)event.getEntity()).kill();
 			}
 		}
 	}
 	
 	@Override
-	public void generateDefaults() {
-		config.set("round-length", 45);
-		config.set("world-names", Collections.singletonList("world"));
-		config.set("schematics", Collections.singletonList("rainbow"));
-		config.set("weight", VoidRound.DEFAULT_weight);
+	public void setCustomDefaults(Config data) {
+		data.addDefault("round-length", 45);
+		data.addDefault("schematics", Collections.singletonList("rainbow"));
 	}
 	
 }

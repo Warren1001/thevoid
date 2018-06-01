@@ -1,10 +1,11 @@
 package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.spigot.data.Config;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.schematic.impl.VoidSchematic;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.api.impl.arena.schematic.VoidSchematic;
+import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
+import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundManager;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.io.File;
@@ -13,61 +14,24 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class Hourglass extends VoidRound {
+public class Hourglass extends SurvivalRound {
 	
 	private final Random rand = new Random();
 	
 	private int[][][] data;
 	private int[] chances;
 	
-	public Hourglass() {
-		super("hourglass");
+	public Hourglass(RoundManager<BasicRound> roundManager) {
+		super(roundManager, "hourglass", false);
 	}
 	
 	@Override
-	public void generateDefaults() {
-		config.set("round-length", -1);
-		config.set("world-names", VoidRound.DEFAULT_worldNames);
-		config.set("schematics", Collections.singletonList("hourglass"));
-		config.set("weight", VoidRound.DEFAULT_weight);
+	public void load(Game game) {
+		loadHourglassData(game.getCurrentRoundInfo().getArena().getCurrentArenaData().getSchematic().getName());
 	}
 	
 	@Override
-	public int getRoundLength() {
-		return 60;
-	}
-	
-	@Override
-	public void load(Game game, Arena arena) {
-		loadHourglassData(arena.getCurrentArenaData().getSchematic().getName());
-	}
-	
-	private void loadHourglassData(String name) {
-		Config.get(new File(VoidSchematic.PATH + name + "-hg.yml")).load(config -> {
-			ConfigurationSection section = config.getConfigurationSection("levels");
-			Set<String> levels = section.getKeys(false);
-			int size = levels.size();
-			data = new int[size][][];
-			chances = new int[size];
-			for(String key : levels) {
-				int level = Integer.parseInt(key);
-				chances[level] = section.getInt(key + ".chance");
-				List<String> list = section.getStringList(key + ".data");
-				int[][] levelData = new int[list.size()][3];
-				for(int i = 0; i < list.size(); i++) {
-					String[] args = list.get(i).split(",");
-					int[] array = levelData[i];
-					array[0] = Integer.parseInt(args[0]);
-					array[1] = Integer.parseInt(args[1]);
-					array[2] = Integer.parseInt(args[2]);
-				}
-				data[level] = levelData;
-			}
-		});
-	}
-	
-	@Override
-	public void start(Game game, Arena arena) {
+	public void start(Game game) {
 		/*for(int i = 0; i < data.length; i++) {
 			int level = i;
 			int[][] locs = data[i];
@@ -96,14 +60,44 @@ public class Hourglass extends VoidRound {
 		}*/
 	}
 	
+	@Override
+	public void end(Game game) {
+		data = null;
+		chances = null;
+	}
+	
+	@Override
+	public void setCustomDefaults(Config data) {
+		data.addDefault("round-length", -1);
+		data.addDefault("schematics", Collections.singletonList("hourglass"));
+	}
+	
 	private boolean canRun() {
 		return data != null;
 	}
 	
-	@Override
-	public void end(Game game, Arena arena) {
-		data = null;
-		chances = null;
+	private void loadHourglassData(String name) {
+		new Config(new File(VoidSchematic.PATH + name + "-hg.yml")).load(config -> {
+			ConfigurationSection section = config.getConfigurationSection("levels");
+			Set<String> levels = section.getKeys(false);
+			int size = levels.size();
+			data = new int[size][][];
+			chances = new int[size];
+			for(String key : levels) {
+				int level = Integer.parseInt(key);
+				chances[level] = section.getInt(key + ".chance");
+				List<String> list = section.getStringList(key + ".data");
+				int[][] levelData = new int[list.size()][3];
+				for(int i = 0; i < list.size(); i++) {
+					String[] args = list.get(i).split(",");
+					int[] array = levelData[i];
+					array[0] = Integer.parseInt(args[0]);
+					array[1] = Integer.parseInt(args[1]);
+					array[2] = Integer.parseInt(args[2]);
+				}
+				data[level] = levelData;
+			}
+		});
 	}
 	
 }

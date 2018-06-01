@@ -1,10 +1,10 @@
 package com.kabryxis.thevoid;
 
 import com.kabryxis.kabutils.random.RandomArrayList;
-import com.kabryxis.kabutils.random.SelfPredicateWeightedRandomArrayList;
+import com.kabryxis.kabutils.random.weighted.conditional.SelfConditionalWeightedRandomArrayList;
 import com.kabryxis.kabutils.spigot.data.Config;
+import com.kabryxis.thevoid.api.round.BasicRound;
 import com.kabryxis.thevoid.api.round.RoundManager;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
 import org.bukkit.plugin.Plugin;
 
 import java.io.File;
@@ -13,9 +13,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class VoidRoundManager implements RoundManager<VoidRound> {
+public class VoidRoundManager implements RoundManager<BasicRound> {
 	
-	private final RandomArrayList<VoidRound> registeredRounds = new SelfPredicateWeightedRandomArrayList<>(2);
+	private final RandomArrayList<BasicRound> registeredRounds = new SelfConditionalWeightedRandomArrayList<>(2);
 	private final Map<String, Object> globalDefaults = new HashMap<>();
 	private final Map<String, Class<?>> globalRequiredObjects = new HashMap<>();
 	
@@ -29,12 +29,12 @@ public class VoidRoundManager implements RoundManager<VoidRound> {
 	}
 	
 	@Override
-	public void registerRound(VoidRound round) {
+	public void registerRound(BasicRound round) {
 		registeredRounds.add(round);
 	}
 	
 	@Override
-	public void registerRounds(VoidRound... rounds) {
+	public void registerRounds(BasicRound... rounds) {
 		registerRounds(rounds);
 	}
 	
@@ -49,12 +49,12 @@ public class VoidRoundManager implements RoundManager<VoidRound> {
 	}
 	
 	@Override
-	public VoidRound getRandomRound() {
+	public BasicRound getRandomRound() {
 		return registeredRounds.random();
 	}
 	
 	@Override
-	public Config getData(VoidRound round) {
+	public Config getData(BasicRound round) {
 		String roundFileName = round.getName() + ".yml";
 		File file = new File(folder, roundFileName);
 		Config data;
@@ -77,7 +77,7 @@ public class VoidRoundManager implements RoundManager<VoidRound> {
 		return data;
 	}
 	
-	protected void checkData(VoidRound round, Config data) {
+	protected void checkData(BasicRound round, Config data) {
 		String roundName = round.getName();
 		Map<String, Class<?>> requiredObjects = round.getRequiredObjects();
 		if(globalRequiredObjects.size() + requiredObjects.size() > 0) {

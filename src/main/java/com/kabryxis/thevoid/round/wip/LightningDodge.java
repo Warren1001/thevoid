@@ -2,11 +2,11 @@ package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.random.Randoms;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
-import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.object.impl.ArenaWalkable;
 import com.kabryxis.thevoid.api.game.Game;
-import com.kabryxis.thevoid.api.game.Gamer;
-import com.kabryxis.thevoid.api.round.impl.VoidRound;
+import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
+import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundManager;
+import com.kabryxis.thevoid.api.util.arena.object.ArenaWalkable;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -23,19 +23,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class LightningDodge extends VoidRound {
+public class LightningDodge extends SurvivalRound {
 	
 	private final Set<BukkitTask> tasks = new HashSet<>();
 	
 	private BukkitTask mainTask = null;
 	
-	public LightningDodge() {
-		super("lightningdodge");
+	public LightningDodge(RoundManager<BasicRound> roundManager) {
+		super(roundManager, "lightningdodge", false);
 	}
 	
 	@Override
-	public void start(Game game, Arena arena) {
-		List<Location> locs = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
+	public void start(Game game) {
+		List<Location> locs = game.getCurrentRoundInfo().getArena().getCurrentArenaData().getDataObject(ArenaWalkable.class).getWalkableLocations();
 		mainTask = BukkitThreads.syncTimer(() -> {
 			for(int i = 0; i < 2; i++) {
 				Location loc = Randoms.getRandom(locs).clone().add(0, 1.25, 0);
@@ -66,7 +66,7 @@ public class LightningDodge extends VoidRound {
 	}
 	
 	@Override
-	public void end(Game game, Arena arena) {
+	public void end(Game game) {
 		mainTask.cancel();
 		mainTask = null;
 		tasks.forEach(BukkitTask::cancel);
@@ -80,7 +80,7 @@ public class LightningDodge extends VoidRound {
 			Entity entity = event.getEntity();
 			if(entity instanceof Player) {
 				Player player = (Player)entity;
-				if(event.getCause() == DamageCause.LIGHTNING) fell(Gamer.getGamer(player));
+				if(event.getCause() == DamageCause.LIGHTNING) game.getPlayerManager().getPlayer(player).kill();
 			}
 		}
 		else if(eve instanceof BlockIgniteEvent) {

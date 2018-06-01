@@ -5,9 +5,9 @@ import com.boydti.fawe.util.EditSessionBuilder;
 import com.kabryxis.kabutils.command.Com;
 import com.kabryxis.kabutils.spigot.command.BukkitCommandIssuer;
 import com.kabryxis.thevoid.TheVoid;
-import com.kabryxis.thevoid.api.arena.ArenaEntry;
-import com.kabryxis.thevoid.api.arena.schematic.util.SchematicCreator;
-import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.game.GamePlayer;
+import com.kabryxis.thevoid.api.util.arena.ArenaEntry;
+import com.kabryxis.thevoid.api.util.arena.schematic.SchematicCreator;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -27,15 +27,15 @@ public class CommandListener {
 	@Com(aliases = {"creator"})
 	public boolean onCreator(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
-		Gamer gamer = Gamer.getGamer(issuer.getPlayer());
-		SchematicCreator creator = gamer.getCreator();
+		GamePlayer gamePlayer = plugin.getGame().getPlayerManager().getPlayer(issuer.getPlayer());
+		SchematicCreator creator = gamePlayer.getCreator();
 		if(args.length == 1) {
 			if(args[0].equalsIgnoreCase("reset")) {
 				creator.reset();
 				return true;
 			}
 			else if(args[0].equalsIgnoreCase("center")) {
-				Location loc = gamer.getWorldLocation();
+				Location loc = gamePlayer.getLocation();
 				creator.center(loc.getX(), loc.getY(), loc.getZ());
 				return true;
 			}
@@ -111,9 +111,9 @@ public class CommandListener {
 	public boolean onBuildMode(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
-			gamer.setGameMode(gamer.isInBuilderMode() ? GameMode.SURVIVAL : GameMode.CREATIVE);
-			gamer.setBuilderMode(!gamer.isInBuilderMode());
+			GamePlayer gamePlayer = plugin.getGame().getPlayerManager().getPlayer(issuer.getPlayer());
+			gamePlayer.setGameMode(gamePlayer.isInBuilderMode() ? GameMode.SURVIVAL : GameMode.CREATIVE);
+			gamePlayer.setBuilderMode(!gamePlayer.isInBuilderMode());
 			return true;
 		}
 		return false;
@@ -265,8 +265,8 @@ public class CommandListener {
 	public boolean onTpCenter(BukkitCommandIssuer issuer, String alias, String[] args) {
 		if(!issuer.isPlayer()) return false;
 		if(args.length == 0) {
-			Gamer gamer = Gamer.getGamer(issuer.getPlayer());
-			gamer.teleport(gamer.getGame().getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter());
+			GamePlayer gamePlayer = plugin.getGame().getPlayerManager().getPlayer(issuer.getPlayer());
+			gamePlayer.teleport(gamePlayer.getGame().getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter());
 			return true;
 		}
 		return false;

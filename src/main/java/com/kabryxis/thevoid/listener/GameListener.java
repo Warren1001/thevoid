@@ -1,12 +1,13 @@
 package com.kabryxis.thevoid.listener;
 
-import com.kabryxis.kabutils.spigot.event.GlobalListener;
 import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
 import com.kabryxis.kabutils.spigot.metadata.Metadata;
-import com.kabryxis.kabutils.spigot.world.ChunkLoader;
-import com.kabryxis.thevoid.api.game.Gamer;
+import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.GamePlayer;
+import com.kabryxis.thevoid.api.game.PlayerManager;
 import com.kabryxis.thevoid.api.round.RoundInfo;
-import com.kabryxis.thevoid.game.VoidGame;
+import com.kabryxis.thevoid.api.util.game.DeathReason;
+import com.kabryxis.thevoid.api.util.game.GameEventHandler;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -22,23 +23,21 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class BukkitListener implements GlobalListener {
+public class GameListener implements GameEventHandler {
 	
-	private final VoidGame game;
-	private final Plugin plugin;
+	private final Game game;
+	private final PlayerManager playerManager;
 	
-	private final Map<Gamer, Long> pmeTimestamps = new HashMap<>();
+	private final Map<GamePlayer, Long> pmeTimestamps = new HashMap<>();
 	
-	public BukkitListener(VoidGame game, Plugin plugin) {
+	public GameListener(Game game) {
 		this.game = game;
-		this.plugin = plugin;
+		this.playerManager = game.getPlayerManager();
 	}
 	
 	@Override
@@ -48,34 +47,32 @@ public class BukkitListener implements GlobalListener {
 		switch(eventName) {
 		case "PlayerJoinEvent":
 			PlayerJoinEvent pje = (PlayerJoinEvent)event;
-			Gamer pjeGamer = Gamer.getGamer(pje.getPlayer());
-			pjeGamer.updatePlayer();
-			game.addGamer(pjeGamer);
+			GamePlayer pjePlayer = playerManager.getPlayer(pje.getPlayer());
+			// TODO perhaps some initialization / data loading
 			break;
 		case "PlayerQuitEvent":
 			PlayerQuitEvent pqe = (PlayerQuitEvent)event;
-			Gamer pqeGamer = Gamer.getGamer(pqe.getPlayer());
-			if(pqeGamer.isInGame()) pqeGamer.getGame().removeGamer(pqeGamer);
-			pqeGamer.setRoundPoints(0, true);
+			GamePlayer pqePlayer = playerManager.getPlayer(pqe.getPlayer());
+			// TODO perhaps save some data
 			break;
 		case "PlayerMoveEvent":
 			PlayerMoveEvent pme = (PlayerMoveEvent)event;
-			Gamer pmeGamer = Gamer.getGamer(pme.getPlayer());
-			if(!pmeGamer.isInBuilderMode()) {
-				if(pmeGamer.isInGame() && pmeGamer.getGame().isInProgress()) {
+			GamePlayer pmePlayer = playerManager.getPlayer(pme.getPlayer());
+			if(!pmePlayer.isInBuilderMode()) {
+				if(game.isInProgress()) {
 					Location from = pme.getFrom(), to = pme.getTo();
 					RoundInfo info = game.getCurrentRoundInfo();
-					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentArenaData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmeGamer, 0L) > 1000) {
-						pmeTimestamps.put(pmeGamer, System.currentTimeMillis());
-						info.getRound().fell(pmeGamer);
+					if(from.getY() > to.getY() && to.getY() < info.getArena().getCurrentArenaData().getLowestY() && System.currentTimeMillis() - pmeTimestamps.getOrDefault(pmePlayer, 0L) > 1000) {
+						pmeTimestamps.put(pmePlayer, System.currentTimeMillis());
+						info.getRound().kill(pmePlayer, DeathReason.FELL);
 					}
 				}
 				else {
 					Location to = pme.getTo();
 					if(to.getY() <= 70) {
-						Vector vel = pmeGamer.getPlayer().getVelocity();
+						Vector vel = pmePlayer.getPlayer().getVelocity();
 						vel.setY(10);
-						pmeGamer.getPlayer().setVelocity(vel);
+						pmePlayer.getPlayer().setVelocity(vel);
 					}
 				}
 			}
@@ -96,40 +93,40 @@ public class BukkitListener implements GlobalListener {
 		//case "PlayerInteractEntityEvent":
 		case "PlayerInteractEvent":
 			PlayerInteractEvent pie = (PlayerInteractEvent)event;
-			Gamer pieGamer = Gamer.getGamer(pie.getPlayer());
-			if(pieGamer.isInBuilderMode()) {
-				if(Items.isType(pieGamer.getInventory().getItemInHand(), Material.STONE_AXE)) {
+			GamePlayer piePlayer = playerManager.getPlayer(pie.getPlayer());
+			if(piePlayer.isInBuilderMode()) {
+				if(Items.isType(piePlayer.getInventory().getItemInHand(), Material.STONE_AXE)) {
 					if(pie.getAction() == Action.LEFT_CLICK_BLOCK) {
-						pieGamer.setLeftSelection(pie.getClickedBlock().getLocation());
+						piePlayer.getSelection().setLeft(pie.getClickedBlock().getLocation());
 						pie.setCancelled(true);
 					}
 					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK) {
-						pieGamer.setRightSelection(pie.getClickedBlock().getLocation());
+						piePlayer.getSelection().setRight(pie.getClickedBlock().getLocation());
 						pie.setCancelled(true);
 					}
 				}
-				else if(Items.isType(pieGamer.getInventory().getItemInHand(), Material.STICK)) {
+				else if(Items.isType(piePlayer.getInventory().getItemInHand(), Material.STICK)) {
 					if(pie.getAction() == Action.LEFT_CLICK_BLOCK) {
-						pieGamer.getSelection().addBlock(pie.getClickedBlock());
+						piePlayer.getSelection().addBlock(pie.getClickedBlock());
 						pie.setCancelled(true);
 					}
 					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK || pie.getAction() == Action.RIGHT_CLICK_AIR) {
-						if(pieGamer.getPlayer().isSneaking()) pieGamer.getSelection().addSelection(false);
-						else pieGamer.getSelection().addSelection(true);
+						if(piePlayer.getPlayer().isSneaking()) piePlayer.getSelection().addSelection(false);
+						else piePlayer.getSelection().addSelection(true);
 						pie.setCancelled(true);
 					}
 				}
-				else if(Items.isType(pieGamer.getInventory().getItemInHand(), Material.STRING)) {
+				else if(Items.isType(piePlayer.getInventory().getItemInHand(), Material.STRING)) {
 					if(pie.getAction() == Action.LEFT_CLICK_BLOCK) {
-						pieGamer.getSelection().removeBlock(pie.getClickedBlock());
+						piePlayer.getSelection().removeBlock(pie.getClickedBlock());
 						pie.setCancelled(true);
 					}
 					else if(pie.getAction() == Action.RIGHT_CLICK_BLOCK || pie.getAction() == Action.RIGHT_CLICK_AIR) {
-						pieGamer.getSelection().removeSelection();
+						piePlayer.getSelection().removeSelection();
 						pie.setCancelled(true);
 					}
 				}
-				else if(Items.isType(pieGamer.getInventory().getItemInHand(), Material.GOLD_SWORD)) {
+				else if(Items.isType(piePlayer.getInventory().getItemInHand(), Material.GOLD_SWORD)) {
 					if(pie.getAction() == Action.LEFT_CLICK_BLOCK) {
 						pie.getClickedBlock().setMetadata("walkable", Metadata.getEmptyMetadataValue());
 						pie.setCancelled(true);
@@ -143,26 +140,22 @@ public class BukkitListener implements GlobalListener {
 			EntityDamageEvent ede = (EntityDamageEvent)event;
 			Entity entity = ede.getEntity();
 			if(entity instanceof Player) {
-				Gamer edeGamer = Gamer.getGamer((Player)entity);
-				if(edeGamer.isInBuilderMode()) break;
+				GamePlayer edePlayer = playerManager.getPlayer((Player)entity);
+				if(edePlayer.isInBuilderMode()) break;
 			}
 			ede.setCancelled(true);
 			break;
 		case "PlayerDropItemEvent":
 			PlayerDropItemEvent pdie = (PlayerDropItemEvent)event;
-			if(!Gamer.getGamer(pdie.getPlayer()).isInBuilderMode()) pdie.setCancelled(true);
+			if(!playerManager.getPlayer(pdie.getPlayer()).isInBuilderMode()) pdie.setCancelled(true);
 			break;
 		case "BlockBreakEvent":
 			BlockBreakEvent bbe = (BlockBreakEvent)event;
-			if(!Gamer.getGamer(bbe.getPlayer()).isInBuilderMode()) bbe.setCancelled(true);
+			if(!playerManager.getPlayer(bbe.getPlayer()).isInBuilderMode()) bbe.setCancelled(true);
 			break;
 		case "BlockPlaceEvent":
 			BlockPlaceEvent bpe = (BlockPlaceEvent)event;
-			if(!Gamer.getGamer(bpe.getPlayer()).isInBuilderMode()) bpe.setCancelled(true);
-			break;
-		case "ChunkUnloadEvent":
-			ChunkUnloadEvent cue = (ChunkUnloadEvent)event;
-			if(ChunkLoader.shouldStayLoaded(cue.getChunk())) cue.setCancelled(true);
+			if(!playerManager.getPlayer(bpe.getPlayer()).isInBuilderMode()) bpe.setCancelled(true);
 			break;
 		case "FoodLevelChangeEvent":
 		case "BlockFormEvent":
@@ -172,12 +165,6 @@ public class BukkitListener implements GlobalListener {
 		default:
 			break;
 		}
-		game.callEvent(event);
-	}
-	
-	@Override
-	public Plugin getPlugin() {
-		return plugin;
 	}
 	
 }
