@@ -10,6 +10,7 @@ import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.GamePlayer;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.api.round.RoundManager;
 import com.kabryxis.thevoid.api.util.arena.object.ArenaWalkable;
 import com.kabryxis.thevoid.round.utility.DisintegrateThread;
@@ -39,8 +40,8 @@ public class KnockbackDisintegrateHybrid extends SurvivalRound {
 	}
 	
 	@Override
-	public void load(Game game) {
-		Arena arena = game.getCurrentRoundInfo().getArena();
+	public void load(Game game, RoundInfo info) {
+		Arena arena = info.getArena();
 		ArenaWalkable walkData = arena.getCurrentArenaData().getDataObject(ArenaWalkable.class);
 		Location center = arena.getLocation();
 		Data.queue(() -> walkData.loadDiamondPatternBlocks(center.getBlockX(), center.getBlockZ()));

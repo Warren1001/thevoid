@@ -48,8 +48,9 @@ public class VoidRoundInfo implements RoundInfo {
 	@Override
 	public void load(Game game) {
 		arena.nextSchematic();
+		arena.loadChunks();
 		arena.loadSchematic();
-		round.load(game);
+		round.load(game, this);
 	}
 	
 }

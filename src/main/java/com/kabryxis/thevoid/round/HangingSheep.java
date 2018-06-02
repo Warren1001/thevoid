@@ -10,6 +10,7 @@ import com.kabryxis.thevoid.api.game.GamePlayer;
 import com.kabryxis.thevoid.api.impl.arena.schematic.VoidSchematic;
 import com.kabryxis.thevoid.api.impl.round.PointsRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.api.round.RoundManager;
 import com.kabryxis.thevoid.round.utility.HangingSheepWork;
 import org.bukkit.ChatColor;
@@ -35,8 +36,8 @@ public class HangingSheep extends PointsRound {
 	}
 	
 	@Override
-	public void load(Game game) {
-		game.getCurrentRoundInfo().getArena().loadAnotherSchematic(fenceSchematic, -MathHelp.floor(fenceSchematic.getSizeX() / 2), 9, -MathHelp.floor(fenceSchematic.getSizeZ() / 2));
+	public void load(Game game, RoundInfo info) {
+		info.getArena().loadAnotherSchematic(fenceSchematic, -MathHelp.floor(fenceSchematic.getSizeX() / 2), 9, -MathHelp.floor(fenceSchematic.getSizeZ() / 2));
 	}
 	
 	@Override

@@ -5,6 +5,7 @@ import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.impl.arena.schematic.VoidSchematic;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
+import com.kabryxis.thevoid.api.round.RoundInfo;
 import com.kabryxis.thevoid.api.round.RoundManager;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -26,8 +27,8 @@ public class Hourglass extends SurvivalRound {
 	}
 	
 	@Override
-	public void load(Game game) {
-		loadHourglassData(game.getCurrentRoundInfo().getArena().getCurrentArenaData().getSchematic().getName());
+	public void load(Game game, RoundInfo info) {
+		loadHourglassData(info.getArena().getCurrentArenaData().getSchematic().getName());
 	}
 	
 	@Override

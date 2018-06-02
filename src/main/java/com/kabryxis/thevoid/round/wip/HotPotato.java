@@ -1,4 +1,4 @@
-package com.kabryxis.thevoid.round;
+package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.thevoid.api.game.Game;
