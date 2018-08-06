@@ -20,11 +20,13 @@ import com.kabryxis.thevoid.game.VoidRoundInfoRegistry;
 import com.kabryxis.thevoid.listener.CommandListener;
 import com.kabryxis.thevoid.listener.GameListener;
 import com.kabryxis.thevoid.listener.VoidListener;
-import com.kabryxis.thevoid.round.wip.ColorPlatform;
+import com.kabryxis.thevoid.round.*;
+import com.kabryxis.thevoid.round.wip.PetDragons;
 import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Objects;
 
 public class TheVoid extends JavaPlugin {
 	
@@ -54,12 +56,13 @@ public class TheVoid extends JavaPlugin {
 		ChunkLoader chunkLoader = new ChunkLoader(this);
 		VoidRoundInfoRegistry infoRegistry = new VoidRoundInfoRegistry(this);
 		VoidRoundManager roundManager = infoRegistry.getRoundManager();
-		infoRegistry.registerRounds(new ColorPlatform(roundManager)/*new SnipePillars(roundManager), new HangingSheep(), new KnockbackDisintegrateHybrid(), new HotPotato(),
-			new DisintegrateRandom(), new DisintegrateWalk(), new Spleef(), new DragonSpleef(), new Knockback(), new LightningDodge(), new Anvilstorm()*/);
-		for(File file : new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml"))) {
+		infoRegistry.registerRounds(new PetDragons(roundManager), new Tosser(roundManager), new ColorPlatform(roundManager), new SnipePillars(roundManager), new HangingSheep(roundManager),
+			new KnockbackDisintegrateHybrid(roundManager), new DisintegrateRandom(roundManager), new DisintegrateWalk(roundManager), new Spleef(roundManager), new Knockback(roundManager),
+				new Anvilstorm(roundManager)/*, new LightningDodge(), new DragonSpleef(), new HotPotato(roundManager)*/);
+		for(File file : Objects.requireNonNull(new File(VoidArena.PATH).listFiles(new FileEndingFilter(".yml")))) {
 			new Config(file).load(config -> infoRegistry.registerArena(new VoidArena(objectRegistry, chunkLoader, config)));
 		}
-		for(File file : new File(VoidSchematic.PATH).listFiles(new FileEndingFilter(".sch"))) {
+		for(File file : Objects.requireNonNull(new File(VoidSchematic.PATH).listFiles(new FileEndingFilter(".sch")))) {
 			infoRegistry.registerSchematic(new VoidBaseSchematic(file));
 		}
 		game = new VoidGame(this, chunkLoader, infoRegistry, objectRegistry);

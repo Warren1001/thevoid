@@ -1,11 +1,12 @@
 package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.spigot.data.Config;
+import com.kabryxis.kabutils.spigot.version.object.dragon.pet.PetDragon;
 import com.kabryxis.thevoid.api.game.Game;
+import com.kabryxis.thevoid.api.game.GamePlayer;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
 import com.kabryxis.thevoid.api.round.RoundManager;
-import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -13,30 +14,25 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PetDragons extends SurvivalRound {
 	
-	//private final Map<Gamer, PetDragon> dragons = new HashMap<>();
+	private final Map<GamePlayer, PetDragon> dragons = new HashMap<>();
 	
 	public PetDragons(RoundManager<BasicRound> roundManager) {
 		super(roundManager, "petdragons", false);
 	}
 	
 	@Override
-	public void start(Game game) {
-		Location center = game.getCurrentRoundInfo().getArena().getLocation();
-		/*BukkitThreads.sync(new Runnable() {
-			
-			@Override
-			public void run() {
-				game.forEachGamer(g -> {
-					PetDragon dragon = new PetDragon(g.getWorldLocation().clone().add(0, 60, 0), g, new Vector(center.getX(), center.getY(), center.getZ()));
-					dragons.put(g, dragon);
-					arena.spawnedCustomEntity(dragon.getBukkitEntity());
-				});
-			}
-			
-		});*/
+	public void setup(GamePlayer gamePlayer) {
+		super.setup(gamePlayer);
+		Game game = gamePlayer.getGame();
+		PetDragon dragon = com.kabryxis.kabutils.spigot.version.object.dragon.pet.PetDragons.newInstance(
+				gamePlayer.getLocation().clone().add(0, 60, 0), gamePlayer.getPlayer(), game.getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter());
+		dragons.put(gamePlayer, dragon);
+		game.getCurrentRoundInfo().getArena().spawnedEntity(dragon.getBukkit());
 	}
 	
 	@Override
@@ -46,7 +42,7 @@ public class PetDragons extends SurvivalRound {
 			Entity entity = event.getRightClicked();
 			if(entity instanceof Player) {
 				Player clicked = (Player)entity, player = event.getPlayer();
-				setTarget(player, clicked);
+				setTarget(game, player, clicked);
 			}
 		}
 		else if(eve instanceof EntityDamageByEntityEvent) {
@@ -54,7 +50,7 @@ public class PetDragons extends SurvivalRound {
 			Entity entity = event.getEntity(), damager = event.getDamager();
 			if(entity instanceof Player && damager instanceof Player) {
 				Player attacked = (Player)entity, player = (Player)damager;
-				setTarget(player, attacked);
+				setTarget(game, player, attacked);
 			}
 		}
 	}
@@ -62,11 +58,12 @@ public class PetDragons extends SurvivalRound {
 	@Override
 	public void setCustomDefaults(Config data) {
 		data.addDefault("round-length", 60);
-		data.addDefault("schematics", Collections.singletonList("theend"));
+		data.addDefault("worlds", Collections.singletonList("void_end"));
+		data.addDefault("schematics", Collections.singletonList("halfsphere"));
 	}
 	
-	private void setTarget(Player owner, Player target) {
-		//dragons.get(Gamer.getGamer(owner)).setTarget(Gamer.getGamer(target));
+	private void setTarget(Game game, Player owner, Player target) {
+		dragons.get(game.getPlayerManager().getPlayer(owner)).setTarget(target);
 		owner.sendMessage("Your dragon is now targeting " + target.getDisplayName() + "!");
 	}
 	

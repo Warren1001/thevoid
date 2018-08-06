@@ -2,3 +2,4 @@ name: TheVoid
 main: com.kabryxis.thevoid.TheVoid
 version: 0.0.1
 depend: [WorldEdit,FastAsyncWorldEdit]
+softdepend: [ProtocolLib]

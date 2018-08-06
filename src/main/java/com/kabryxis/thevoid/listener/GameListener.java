@@ -2,6 +2,7 @@ package com.kabryxis.thevoid.listener;
 
 import com.kabryxis.kabutils.spigot.inventory.itemstack.Items;
 import com.kabryxis.kabutils.spigot.metadata.Metadata;
+import com.kabryxis.kabutils.spigot.version.object.dragon.pet.PetDragons;
 import com.kabryxis.thevoid.TheVoid;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.game.GamePlayer;
@@ -84,7 +85,7 @@ public class GameListener implements GameEventHandler {
 			break;
 		case "CreatureSpawnEvent":
 			CreatureSpawnEvent cse = (CreatureSpawnEvent)event;
-			if(cse.getSpawnReason() != SpawnReason.CUSTOM/* && !(((CraftEntity)cse.getEntity()).getHandle() instanceof PetDragon)*/) cse.setCancelled(true);
+			if(cse.getSpawnReason() != SpawnReason.CUSTOM && !PetDragons.isPetDragon(cse.getEntity())) cse.setCancelled(true);
 			break;
 		case "ItemSpawnEvent":
 		case "EntitySpawnEvent":

@@ -1,4 +1,4 @@
-package com.kabryxis.thevoid.round.wip;
+package com.kabryxis.thevoid.round;
 
 import com.boydti.fawe.FaweCache;
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;

@@ -2,13 +2,13 @@ package com.kabryxis.thevoid.round.wip;
 
 import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.data.Config;
+import com.kabryxis.kabutils.spigot.version.object.dragon.pet.PetDragons;
 import com.kabryxis.thevoid.api.arena.Arena;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
 import com.kabryxis.thevoid.api.round.RoundManager;
 import org.bukkit.Location;
-import org.bukkit.entity.EnderDragon;
 
 import java.util.Collections;
 
@@ -34,7 +34,7 @@ public class DragonSpleef extends SurvivalRound {
 			Location center = arena.getLocation();
 			for(int x : coords) {
 				for(int z : coords) {
-					if(x != 0 && z != 0) arena.spawnedEntity(center.getWorld().spawn(center.clone().add(x, 1.75, z), EnderDragon.class));
+					if(x != 0 && z != 0) arena.spawnedEntity(PetDragons.newInstance(center.clone().add(x, 1.75, z), null, center).getBukkit());
 				}
 			}
 		}, 30L);

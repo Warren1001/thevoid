@@ -1,4 +1,4 @@
-package com.kabryxis.thevoid.round.wip;
+package com.kabryxis.thevoid.round;
 
 import com.boydti.fawe.FaweCache;
 import com.kabryxis.kabutils.concurrent.Threads;
@@ -8,7 +8,6 @@ import com.kabryxis.kabutils.spigot.concurrent.BukkitThreads;
 import com.kabryxis.kabutils.spigot.data.Config;
 import com.kabryxis.kabutils.spigot.world.Teleport;
 import com.kabryxis.thevoid.api.arena.Arena;
-import com.kabryxis.thevoid.api.arena.schematic.BaseArenaData;
 import com.kabryxis.thevoid.api.game.Game;
 import com.kabryxis.thevoid.api.impl.round.SurvivalRound;
 import com.kabryxis.thevoid.api.round.BasicRound;
@@ -106,16 +105,15 @@ public class ColorPlatform extends SurvivalRound {
 	public void setCustomDefaults(Config data) {
 		data.addDefault("schematics", Collections.singletonList("empty"));
 		data.addDefault("round-length", -1);
-		data.addDefault("platform-size", 7);
+		data.addDefault("platform-size", 9);
 		data.addDefault("attempts", 3);
 		data.addDefault("speed-up", 500);
-		data.addDefault("radius", 4.5);
+		data.addDefault("radius", 2.75);
 	}
 	
 	@Override
 	public Location[] getSpawns(Game game, int amount) {
-		BaseArenaData arenaData = game.getCurrentRoundInfo().getArena().getCurrentArenaData();
-		return Teleport.getEquidistantPoints(arenaData.getCenter(), amount, getData().getDouble("radius"));
+		return Teleport.getEquidistantPoints(game.getCurrentRoundInfo().getArena().getCurrentArenaData().getCenter(), amount, getData().getDouble("radius"));
 	}
 	
 	protected void fillArena(Arena arena) {
